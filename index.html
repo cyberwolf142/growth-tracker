@@ -551,12 +551,56 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(blob.iv) }, k, unb64(blob.ct));
     return { data: JSON.parse(td.decode(pt)), key: k, salt: sb };
   }
-  async function persist() {
-    clearTimeout(saveTimer); saveTimer = null;
-    if (!key) return;
-    lsSet(ENC_KEY, JSON.stringify(await seal(db, key, salt)));
+  // Saves run one at a time, right away. If another tab or window of the tracker
+  // saved in the meantime, its projects, events and days are merged in first,
+  // so two open copies can't overwrite each other.
+  let lastSeen = null, chain = Promise.resolve();
+  const sameSalt = blob => blob && salt && blob.salt === b64(salt);
+  async function readOther(str) {
+    const blob = JSON.parse(str);
+    if (!sameSalt(blob)) return null;
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(blob.iv) }, key, unb64(blob.ct));
+    return JSON.parse(td.decode(pt));
   }
-  function save() { if (!key) return; clearTimeout(saveTimer); saveTimer = setTimeout(persist, 300); }
+  function byId(mine, theirs) {
+    const out = (mine || []).slice(), ids = new Set(out.map(x => x.id));
+    (theirs || []).forEach(x => { if (!ids.has(x.id)) out.push(x); });
+    return out;
+  }
+  function mergeIn(other) {
+    if (!other) return;
+    db.projects = byId(db.projects, other.projects);
+    (db.projects || []).forEach(p => { const o = (other.projects || []).find(x => x.id === p.id); if (o) p.steps = byId(p.steps, o.steps); });
+    db.events = byId(db.events, other.events);
+    db.days = db.days || {}; Object.keys(other.days || {}).forEach(k => { if (!db.days[k]) db.days[k] = other.days[k]; });
+    db.reviews = db.reviews || {}; Object.keys(other.reviews || {}).forEach(k => { if (!db.reviews[k]) db.reviews[k] = other.reviews[k]; });
+    if (!db.people && other.people) db.people = other.people;
+  }
+  function persist() {
+    clearTimeout(saveTimer); saveTimer = null;
+    chain = chain.then(async () => {
+      if (!key) return;
+      const cur = lsGet(ENC_KEY);
+      if (cur && lastSeen && cur !== lastSeen) { try { mergeIn(await readOther(cur)); } catch (e) {} }
+      const str = JSON.stringify(await seal(db, key, salt));
+      lsSet(ENC_KEY, str); lastSeen = str;
+    }).catch(() => {});
+    return chain;
+  }
+  function save() { if (!key) return; clearTimeout(saveTimer); saveTimer = setTimeout(persist, 150); }
+  // Another tab saved: take its newer copy so this one stays in step.
+  async function adoptOther(str) {
+    if (!key || !str || str === lastSeen) return;
+    let other = null;
+    try { other = await readOther(str); } catch (e) {}
+    if (!other) { if (!sameSalt(JSON.parse(str))) lockNow(true); return; }
+    await chain;
+    db = other; db.days = db.days || {}; db.reviews = db.reviews || {}; db.events = db.events || []; db.projects = db.projects || [];
+    lastSeen = str;
+    const typing = document.activeElement && document.activeElement.matches("main textarea, main input[type=text]");
+    if (!typing) renderAll(); else updateBadges();
+  }
+  window.addEventListener("storage", e => { if (e.key === ENC_KEY && e.newValue) adoptOther(e.newValue); });
 
   // ---------- dates ----------
   const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -1122,9 +1166,9 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     document.body.classList.remove("unlocked");
     setTimeout(() => passEl.focus(), 50);
   }
-  async function lockNow() {
-    if (key) await persist();
-    stopTimer(); key = null; salt = null; db = empty();
+  async function lockNow(skipSave) {
+    if (key && skipSave !== true) await persist();
+    stopTimer(); key = null; salt = null; lastSeen = null; db = empty();
     document.querySelectorAll("main textarea, main input[type=password]").forEach(t => t.value = "");
     msg.textContent = ""; clearTimeout(idleTimer);
     showLock();
@@ -1134,9 +1178,10 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) { hiddenAt = Date.now(); if (key) persist(); }
     else if (key && hiddenAt && Date.now() - hiddenAt > 60 * 1000) lockNow();
+    else if (key) adoptOther(lsGet(ENC_KEY));
   });
   window.addEventListener("pagehide", () => { if (key) persist(); });
-  document.getElementById("lockNow").onclick = lockNow;
+  document.getElementById("lockNow").onclick = () => lockNow();
 
   lockForm.addEventListener("submit", async e => {
     e.preventDefault(); lockErr.textContent = "";
@@ -1151,7 +1196,7 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     } else {
       if (Date.now() < waitUntil) { lockErr.textContent = "Too many tries. Wait " + Math.ceil((waitUntil - Date.now()) / 1000) + " seconds."; return; }
       document.getElementById("unlockBtn").disabled = true;
-      try { const r = await open(JSON.parse(stored), pass); db = r.data; key = r.key; salt = r.salt; failures = 0; }
+      try { const r = await open(JSON.parse(stored), pass); db = r.data; key = r.key; salt = r.salt; lastSeen = stored; failures = 0; }
       catch (e2) {
         failures++; if (failures >= 5) { waitUntil = Date.now() + 30000; failures = 0; }
         lockErr.textContent = "That passcode isn't right."; passEl.select();
