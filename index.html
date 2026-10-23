@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Growth Tracker</title>
+<style>
+:root {
+  --bg: #f6f5f1; --card: #ffffff; --text: #1f2328; --muted: #646b73; --line: #e2e0d9;
+  --accent: #2f6f5e; --accent-soft: #e3efe9; --star: #c98a12; --danger: #b3412f;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #15181b; --card: #1e2226; --text: #e8e6e1; --muted: #9aa1a8; --line: #30353a;
+    --accent: #6cc0a6; --accent-soft: #23352f; --star: #e8b54a; --danger: #e07a68; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { padding: 20px 16px 8px; max-width: 860px; margin: 0 auto; }
+header h1 { margin: 0; font-size: 1.5rem; }
+header p { margin: 4px 0 0; color: var(--muted); }
+nav { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav .inner { max-width: 860px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; }
+nav button { border: 0; background: none; color: var(--muted); padding: 8px 12px; border-radius: 999px;
+  font: inherit; cursor: pointer; white-space: nowrap; }
+nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+main { max-width: 860px; margin: 0 auto; padding: 16px; }
+section { display: none; } section.active { display: block; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+.card h2 { margin: 0 0 4px; font-size: 1.15rem; } .card h3 { margin: 0 0 6px; font-size: 1rem; }
+.muted { color: var(--muted); font-size: .92rem; }
+label.check { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
+label.check:first-of-type { border-top: 0; }
+input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; flex: none; }
+textarea, input[type=text], input[type=date] { width: 100%; font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+textarea { min-height: 64px; resize: vertical; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pill { border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 999px;
+  padding: 6px 14px; font: inherit; cursor: pointer; }
+.pill.on { background: var(--accent); color: var(--card); border-color: var(--accent); }
+.btn { border: 0; background: var(--accent); color: var(--card); border-radius: 10px; padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.daynav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+.daynav strong { font-size: 1.05rem; text-align: center; }
+.focus { background: var(--accent-soft); border-color: transparent; }
+.focus .tag { display: inline-block; font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 520px; }
+th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: center; font-size: .92rem; }
+th:first-child, td:first-child { text-align: left; }
+td.yes { color: var(--accent); font-weight: 700; }
+.stat { font-size: 1.6rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tool summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.breath { text-align: center; padding: 10px 0; }
+.circle { width: 140px; height: 140px; border-radius: 50%; margin: 10px auto; background: var(--accent-soft);
+  border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center;
+  font-weight: 700; transition: transform 1s linear; }
+.crisis { border-color: var(--danger); }
+.crisis h3 { color: var(--danger); }
+.stars span { color: var(--star); }
+footer { max-width: 860px; margin: 0 auto; padding: 8px 16px 40px; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Growth Tracker</h1>
+  <p>Small daily habits, one exercise a day, and tools for hard moments. Everything you type stays in this browser.</p>
+</header>
+<nav><div class="inner" id="tabs">
+  <button data-tab="today" class="active">Today</button>
+  <button data-tab="week">This week</button>
+  <button data-tab="toolkit">Hard moments</button>
+  <button data-tab="others">Helping others</button>
+  <button data-tab="review">Sunday review</button>
+  <button data-tab="data">Backup</button>
+</div></nav>
+
+<main>
+<!-- TODAY -->
+<section id="today" class="active">
+  <div class="daynav">
+    <button class="pill" id="prevDay" aria-label="Previous day">&larr;</button>
+    <strong id="dayLabel"></strong>
+    <button class="pill" id="nextDay" aria-label="Next day">&rarr;</button>
+  </div>
+
+  <div class="card focus" id="focusCard"></div>
+
+  <div class="card">
+    <h2>Daily anchors</h2>
+    <p class="muted">About 10 minutes in total. A small version counts.</p>
+    <div id="anchorList"></div>
+  </div>
+
+  <div class="card">
+    <h3>Energy today (spoons)</h3>
+    <p class="muted">Low-spoon day? Do the 5-minute version of today's exercise.</p>
+    <div class="row" id="spoonRow">
+      <button class="pill" data-spoon="low">Low</button>
+      <button class="pill" data-spoon="medium">Medium</button>
+      <button class="pill" data-spoon="high">High</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Mood <span id="moodVal" class="muted"></span></h3>
+    <input type="range" min="0" max="10" step="1" id="mood" aria-label="Mood from 0 to 10">
+    <div class="row muted" style="justify-content:space-between"><span>0 awful</span><span>10 great</span></div>
+  </div>
+
+  <div class="card">
+    <h3>Morning check-in</h3>
+    <p class="muted">What is my body feeling? What am I thinking? You have permission to feel what you feel.</p>
+    <textarea id="checkinNote" placeholder="One line is enough"></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Today's gold star <span class="stars"><span>&#9733;</span></span></h3>
+    <p class="muted">One thing you did today, however small.</p>
+    <textarea id="starNote" placeholder="I got out of bed and made breakfast."></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Exercise notes</h3>
+    <textarea id="exerciseNote" placeholder="Write your answers to today's exercise here"></textarea>
+  </div>
+</section>
+
+<!-- WEEK -->
+<section id="week">
+  <div class="daynav">
+    <button class="pill" id="prevWeek" aria-label="Previous week">&larr;</button>
+    <strong id="weekLabel"></strong>
+    <button class="pill" id="nextWeek" aria-label="Next week">&rarr;</button>
+  </div>
+  <div class="grid" id="weekStats"></div>
+  <div class="card" style="margin-top:14px">
+    <h2>Tracker</h2>
+    <p class="muted">Tap a day on the Today tab to fill it in. Aim for progress, not a perfect week.</p>
+    <div class="tablewrap"><table id="weekTable"></table></div>
+  </div>
+  <div class="card">
+    <h2>The weekly plan</h2>
+    <div class="tablewrap"><table id="planTable"></table></div>
+  </div>
+</section>
+
+<!-- TOOLKIT -->
+<section id="toolkit">
+  <div class="card">
+    <h2>Tools for hard moments</h2>
+    <p class="muted">Practice these on calm days so they work on hard ones. Tick "Used a tool" on Today when you do.</p>
+  </div>
+
+  <div class="card">
+    <h3>Breathing coach</h3>
+    <p class="muted">A long exhale tells your body it's safe.</p>
+    <div class="row">
+      <button class="pill on" data-pattern="578">5-7-8 breathing</button>
+      <button class="pill" data-pattern="bee">Bee breathing (hum out)</button>
+      <button class="pill" data-pattern="box">Box 4-4-4-4</button>
+    </div>
+    <div class="breath">
+      <div class="circle" id="circle">Ready</div>
+      <div class="muted" id="breathInfo">4 rounds</div>
+      <div class="row" style="justify-content:center;margin-top:10px">
+        <button class="btn" id="breathStart">Start</button>
+        <button class="btn ghost" id="breathStop">Stop</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>5-4-3-2-1 grounding</h3>
+    <p class="muted">For panic or overwhelm. Say each one out loud or in your head.</p>
+    <div id="groundStep" style="font-size:1.1rem;font-weight:600;margin:10px 0"></div>
+    <div class="row"><button class="btn" id="groundNext">Start</button><button class="btn ghost" id="groundReset">Reset</button></div>
+  </div>
+
+  <div class="card" id="toolList"></div>
+
+  <div class="card crisis">
+    <h3>In crisis or unsafe</h3>
+    <p>Call or text <strong>988</strong> (US Suicide &amp; Crisis Lifeline), your local emergency number, or someone you trust. You don't have to handle it alone.</p>
+  </div>
+</section>
+
+<!-- OTHERS -->
+<section id="others">
+  <div class="card">
+    <h2>Helping others</h2>
+    <p class="muted">From <em>Coping Skills</em>: nobody ever calmed down because someone told them to calm down.</p>
+    <div id="othersList"></div>
+  </div>
+  <div class="card">
+    <h3>Who could use a check-in this week?</h3>
+    <textarea id="peopleNote" placeholder="Names, and one small thing you could offer each"></textarea>
+  </div>
+</section>
+
+<!-- REVIEW -->
+<section id="review">
+  <div class="card">
+    <h2>Sunday review <span class="muted" id="reviewWeek"></span></h2>
+    <p class="muted">10 minutes. Look for patterns, not grades.</p>
+    <div id="reviewForm"></div>
+  </div>
+  <div class="card">
+    <h3>Past reviews</h3>
+    <div id="pastReviews" class="muted">None yet.</div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <div class="card">
+    <h2>Backup</h2>
+    <p class="muted">Your entries live only in this browser on this device. Download a backup now and then, and load it on another device to move your data.</p>
+    <div class="row">
+      <button class="btn" id="exportBtn">Download backup</button>
+      <label class="btn ghost" for="importFile">Load backup</label>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+    <p id="dataMsg" class="muted"></p>
+  </div>
+  <div class="card">
+    <h3>Start over</h3>
+    <p class="muted">Deletes every entry in this browser. Download a backup first.</p>
+    <button class="btn ghost" id="wipeBtn" style="color:var(--danger);border-color:var(--danger)">Delete all entries</button>
+  </div>
+</section>
+</main>
+
+<footer>Built from the books in your "books" folder, mostly Dr. Faith G. Harper's <em>Unfuck Your…</em> series. Self-help, not a replacement for care.</footer>
+
+<script>
+(function () {
+  const KEY = "growth-tracker-v1";
+  const PLAN = {
+    1: { day: "Monday", focus: "Thoughts", title: "ANT hunt", time: "15 min",
+      steps: ["Write down 3 automatic negative thoughts from the last day (\"I always mess up\").",
+              "Next to each, write a fairer, more balanced reply.",
+              "Ask: what would I say to a friend who thought this?"],
+      book: "Unfuck Your Year, Unfuck Your Brain" },
+    2: { day: "Tuesday", focus: "Body and calm", title: "Breathe and walk", time: "20 min",
+      steps: ["10 minutes of bee breathing: hum on a long, slow exhale (use the breathing coach on Hard moments).",
+              "Then a 10-minute walk outside in daylight.",
+              "Notice your mood before and after."],
+      book: "Unfuck Your Year, This Is Your Brain on Anxiety" },
+    3: { day: "Wednesday", focus: "Anger and hurt", title: "Find the HEN", time: "15 min",
+      steps: ["Think of one moment you got irritated this week.",
+              "Was it Hurt, an Expectation not met, or a Need not met?",
+              "Write what was underneath it, and what you'd like to do next time."],
+      book: "Unfuck Your Anger, Unfuck Your Year" },
+    4: { day: "Thursday", focus: "Boundaries", title: "One small \"no\"", time: "20 min",
+      steps: ["Pick one thing you've been saying yes to that drains you.",
+              "Write a reply that is Brief, Informative, Friendly and Firm (BIFF).",
+              "Use it if you can. Remember FAST: be Fair, don't over-Apologize, Stick to your values, be Truthful."],
+      book: "Unfuck Your Boundaries and workbook" },
+    5: { day: "Friday", focus: "Connection", title: "Reach out", time: "20 min",
+      steps: ["Text or call one person to thank them or check in.",
+              "Then think of one relationship. Write \"I see\" (only facts) and \"I imagine\" (the stories you tell yourself).",
+              "Is there a gap? Is anything worth talking about?"],
+      book: "Unfuck Your Intimacy, Unfuck Your Year" },
+    6: { day: "Saturday", focus: "Joy and movement", title: "Do one fun thing", time: "30 min",
+      steps: ["Movement you enjoy (walk, dance, swim, play) or a hobby, with no goal attached.",
+              "Rate how you feel before and after, 0 to 10."],
+      book: "This Is Your Brain on Depression, Fuck Happiness" },
+    0: { day: "Sunday", focus: "Review and reset", title: "Weekly review", time: "30 min",
+      steps: ["Fill in the Sunday review tab.",
+              "Look for exceptions: when was this week easier, and what was different?",
+              "Do one small adulting task you've been putting off."],
+      book: "Unfuck Your Year, Unfuck Your Adulting" }
+  };
+  const ANCHORS = [
+    ["checkin", "Morning check-in", "Body, thoughts, feeling 0 to 10 (3 min)"],
+    ["spooncount", "Counted my spoons", "Low, medium or high energy (1 min)"],
+    ["exercise", "Did today's exercise", "Or the 5-minute version"],
+    ["star", "Evening gold star", "One thing I did today (5 min)"],
+    ["winddown", "Bedtime wind-down", "Screens off and lights low 30 min before bed"],
+    ["tool", "Used a hard-moments tool", "Only if you needed one"]
+  ];
+  const TOOLS = [
+    ["Flooded by a feeling: NAME it", "Notice it in your body. Acknowledge it: \"I'm having the feeling of...\". Make space for it to run its course. Expand your attention back to the world around you."],
+    ["Angry", "Step away and breathe. Ask: is this Hurt, an Expectation not met, or a Need not met? Respond once you know which."],
+    ["Low, stuck, depressed", "Pick the smallest useful step: drink water, shower, step outside. Count your spoons and do one thing, not all things."],
+    ["Self-critical", "Ask: \"What would I say to a friend who did this?\" Say that to yourself, out loud if you can."],
+    ["Anxious about something ahead", "Look for exceptions: when has this gone better before, and what was different? Then take one small step toward it, not a giant leap."]
+  ];
+  const OTHERS = [
+    ["Take their feelings seriously", "What they feel is real to them. Skip \"calm down\"."],
+    ["Remember they were already at 99", "A big reaction to something small usually means a lot was piling up first."],
+    ["Share, don't fix", "Talk about a hard time of your own and what helped, without saying \"I know exactly how you feel\"."],
+    ["Offer one concrete chunk", "\"Want me to help with the dishes?\" beats \"Let me know if you need anything.\""],
+    ["Leave the door open", "If they say no, tell them the offer stands."],
+    ["Keep your own boundaries", "You can understand someone and still not accept being treated badly."],
+    ["Learn to ask the hard question", "A short suicide-prevention course makes it easier to ask \"Are you thinking about hurting yourself?\" and know what to do next."]
+  ];
+  const REVIEW_Q = [
+    ["easier", "When was this week easier, and what was different then?"],
+    ["helped", "Which exercise helped most? (Keep it.)"],
+    ["swap", "Which one felt useless? What will I try instead?"],
+    ["proud", "One thing I'm proud of this week"],
+    ["goal", "One small goal for next week"]
+  ];
+
+  // ---------- storage ----------
+  function load() {
+    try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.days) return d; } catch (e) {}
+    return { days: {}, reviews: {}, people: "" };
+  }
+  let db = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+
+  // ---------- dates ----------
+  const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const mondayOf = d => { const x = new Date(d); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); x.setHours(0,0,0,0); return x; };
+  const fmt = (d, o) => d.toLocaleDateString(undefined, o);
+  let current = new Date(); current.setHours(0,0,0,0);
+  let weekStart = mondayOf(current);
+  const day = k => (db.days[k] = db.days[k] || { checks: {}, mood: null, spoons: null });
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---------- tabs ----------
+  document.getElementById("tabs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
+    document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
+    if (b.dataset.tab === "week") renderWeek();
+    if (b.dataset.tab === "review") renderReview();
+    window.scrollTo(0, 0);
+  });
+
+  // ---------- today ----------
+  function renderToday() {
+    const k = iso(current), d = day(k), p = PLAN[current.getDay()];
+    const isToday = k === iso(new Date());
+    document.getElementById("dayLabel").textContent = (isToday ? "Today, " : "") + fmt(current, { weekday: "long", month: "short", day: "numeric" });
+    document.getElementById("focusCard").innerHTML =
+      '<span class="tag">' + esc(p.day) + " &middot; " + esc(p.focus) + '</span><h2>' + esc(p.title) + ' <span class="muted">(' + esc(p.time) + ')</span></h2><ol>' +
+      p.steps.map(s => "<li>" + esc(s) + "</li>").join("") + '</ol><div class="muted">From: ' + esc(p.book) + "</div>";
+    document.getElementById("anchorList").innerHTML = ANCHORS.map(([id, t, h]) =>
+      '<label class="check"><input type="checkbox" data-anchor="' + id + '"' + (d.checks[id] ? " checked" : "") + '><span><strong>' + esc(t) + '</strong><br><span class="muted">' + esc(h) + "</span></span></label>").join("");
+    document.querySelectorAll("#spoonRow .pill").forEach(b => b.classList.toggle("on", b.dataset.spoon === d.spoons));
+    const m = document.getElementById("mood");
+    m.value = d.mood == null ? 5 : d.mood;
+    document.getElementById("moodVal").textContent = d.mood == null ? "(not set)" : d.mood + " / 10";
+    document.getElementById("checkinNote").value = d.checkin || "";
+    document.getElementById("starNote").value = d.starNote || "";
+    document.getElementById("exerciseNote").value = d.exNote || "";
+  }
+  document.getElementById("anchorList").addEventListener("change", e => {
+    const id = e.target.dataset.anchor; if (!id) return;
+    day(iso(current)).checks[id] = e.target.checked; save();
+  });
+  document.getElementById("spoonRow").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const d = day(iso(current)); d.spoons = d.spoons === b.dataset.spoon ? null : b.dataset.spoon;
+    if (d.spoons) d.checks.spooncount = true;
+    save(); renderToday();
+  });
+  document.getElementById("mood").addEventListener("input", e => {
+    day(iso(current)).mood = +e.target.value; save();
+    document.getElementById("moodVal").textContent = e.target.value + " / 10";
+  });
+  [["checkinNote", "checkin", "checkin"], ["starNote", "starNote", "star"], ["exerciseNote", "exNote", "exercise"]].forEach(([el, field, anchor]) => {
+    document.getElementById(el).addEventListener("input", e => {
+      const d = day(iso(current)); d[field] = e.target.value;
+      if (e.target.value.trim() && !d.checks[anchor]) { d.checks[anchor] = true; renderAnchorsOnly(); }
+      save();
+    });
+  });
+  function renderAnchorsOnly() {
+    const d = day(iso(current));
+    document.querySelectorAll("[data-anchor]").forEach(c => c.checked = !!d.checks[c.dataset.anchor]);
+  }
+  document.getElementById("prevDay").onclick = () => { current = addDays(current, -1); renderToday(); };
+  document.getElementById("nextDay").onclick = () => { current = addDays(current, 1); renderToday(); };
+
+  // ---------- week ----------
+  function renderWeek() {
+    const days = [...Array(7)].map((_, i) => addDays(weekStart, i));
+    document.getElementById("weekLabel").textContent = "Week of " + fmt(weekStart, { month: "short", day: "numeric", year: "numeric" });
+    let head = "<tr><th>Habit</th>" + days.map(d => "<th>" + fmt(d, { weekday: "short" }) + "</th>").join("") + "</tr>";
+    let rows = ANCHORS.map(([id, t]) => "<tr><td>" + esc(t) + "</td>" + days.map(d => {
+      const x = db.days[iso(d)]; const on = x && x.checks && x.checks[id];
+      return '<td class="' + (on ? "yes" : "") + '">' + (on ? "&#10003;" : "") + "</td>";
+    }).join("") + "</tr>").join("");
+    rows += "<tr><td>Mood (0 to 10)</td>" + days.map(d => { const x = db.days[iso(d)]; return "<td>" + (x && x.mood != null ? x.mood : "") + "</td>"; }).join("") + "</tr>";
+    rows += "<tr><td>Spoons</td>" + days.map(d => { const x = db.days[iso(d)]; return "<td>" + (x && x.spoons ? x.spoons[0].toUpperCase() : "") + "</td>"; }).join("") + "</tr>";
+    document.getElementById("weekTable").innerHTML = head + rows;
+
+    let done = 0, moods = [], stars = 0;
+    days.forEach(d => { const x = db.days[iso(d)]; if (!x) return;
+      done += ANCHORS.filter(([id]) => id !== "tool" && x.checks[id]).length;
+      if (x.mood != null) moods.push(x.mood); if (x.checks.star) stars++; });
+    const avg = moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1) : "-";
+    document.getElementById("weekStats").innerHTML =
+      '<div class="card"><div class="muted">Habits done</div><div class="stat">' + done + ' <span class="muted" style="font-size:1rem">/ 35</span></div></div>' +
+      '<div class="card"><div class="muted">Average mood</div><div class="stat">' + avg + "</div></div>" +
+      '<div class="card"><div class="muted">Gold stars</div><div class="stat stars"><span>' + stars + " &#9733;</span></div></div>";
+    document.getElementById("planTable").innerHTML = "<tr><th>Day</th><th>Focus</th><th>Exercise</th><th>Time</th></tr>" +
+      [1, 2, 3, 4, 5, 6, 0].map(i => { const p = PLAN[i]; return "<tr><td>" + p.day + "</td><td>" + esc(p.focus) + "</td><td>" + esc(p.title) + "</td><td>" + p.time + "</td></tr>"; }).join("");
+  }
+  document.getElementById("prevWeek").onclick = () => { weekStart = addDays(weekStart, -7); renderWeek(); };
+  document.getElementById("nextWeek").onclick = () => { weekStart = addDays(weekStart, 7); renderWeek(); };
+
+  // ---------- toolkit ----------
+  document.getElementById("toolList").innerHTML = "<h3>More quick tools</h3>" + TOOLS.map(([t, b]) =>
+    '<details class="tool"><summary>' + esc(t) + "</summary><p>" + esc(b) + "</p></details>").join("");
+  const PATTERNS = {
+    "578": { name: "5-7-8", phases: [["Breathe in", 5, 1.35], ["Hold", 7, 1.35], ["Breathe out", 8, 1]], rounds: 4 },
+    "bee": { name: "Bee", phases: [["Breathe in through your nose", 4, 1.35], ["Hum out slowly, lips closed", 8, 1]], rounds: 6 },
+    "box": { name: "Box", phases: [["Breathe in", 4, 1.35], ["Hold", 4, 1.35], ["Breathe out", 4, 1], ["Hold", 4, 1]], rounds: 4 }
+  };
+  let pattern = "578", timer = null;
+  const circle = document.getElementById("circle"), info = document.getElementById("breathInfo");
+  document.querySelectorAll("[data-pattern]").forEach(b => b.onclick = () => {
+    stopBreath(); pattern = b.dataset.pattern;
+    document.querySelectorAll("[data-pattern]").forEach(x => x.classList.toggle("on", x === b));
+    info.textContent = PATTERNS[pattern].rounds + " rounds";
+  });
+  function stopBreath() { clearInterval(timer); timer = null; circle.textContent = "Ready"; circle.style.transform = "scale(1)"; info.textContent = PATTERNS[pattern].rounds + " rounds"; }
+  document.getElementById("breathStop").onclick = stopBreath;
+  document.getElementById("breathStart").onclick = () => {
+    stopBreath(); const P = PATTERNS[pattern]; let round = 1, phase = 0, left = P.phases[0][1];
+    const show = () => { const [label, , scale] = P.phases[phase];
+      circle.textContent = left; circle.style.transform = "scale(" + scale + ")";
+      info.textContent = label + " · round " + round + " of " + P.rounds; };
+    show();
+    timer = setInterval(() => {
+      left--;
+      if (left <= 0) { phase++;
+        if (phase >= P.phases.length) { phase = 0; round++;
+          if (round > P.rounds) { stopBreath(); circle.textContent = "Done"; info.textContent = "Nice work. Notice how you feel now.";
+            const d = day(iso(new Date())); d.checks.tool = true; save(); return; } }
+        left = P.phases[phase][1]; }
+      show();
+    }, 1000);
+  };
+  const GROUND = ["Name 5 things you can see.", "Name 4 things you can touch.", "Name 3 things you can hear.", "Name 2 things you can smell.", "Name 1 thing you can taste.", "Take one slow breath. You're here, right now."];
+  let g = -1; const gs = document.getElementById("groundStep"), gn = document.getElementById("groundNext");
+  gs.textContent = "Press Start when you're ready.";
+  gn.onclick = () => { g++; if (g >= GROUND.length) g = GROUND.length - 1;
+    gs.textContent = GROUND[g]; gn.textContent = g === GROUND.length - 1 ? "Done" : "Next";
+    if (g === GROUND.length - 1) { const d = day(iso(new Date())); d.checks.tool = true; save(); } };
+  document.getElementById("groundReset").onclick = () => { g = -1; gs.textContent = "Press Start when you're ready."; gn.textContent = "Start"; };
+
+  // ---------- others ----------
+  document.getElementById("othersList").innerHTML = OTHERS.map(([t, b]) =>
+    '<label class="check"><span><strong>' + esc(t) + '</strong><br><span class="muted">' + esc(b) + "</span></span></label>").join("");
+  const pn = document.getElementById("peopleNote"); pn.value = db.people || "";
+  pn.addEventListener("input", () => { db.people = pn.value; save(); });
+
+  // ---------- review ----------
+  function renderReview() {
+    const wk = iso(mondayOf(new Date()));
+    document.getElementById("reviewWeek").textContent = "· week of " + fmt(mondayOf(new Date()), { month: "short", day: "numeric" });
+    const r = (db.reviews[wk] = db.reviews[wk] || {});
+    document.getElementById("reviewForm").innerHTML = REVIEW_Q.map(([id, q]) =>
+      '<p style="margin:12px 0 4px"><strong>' + esc(q) + '</strong></p><textarea data-rq="' + id + '">' + esc(r[id] || "") + "</textarea>").join("");
+    document.querySelectorAll("[data-rq]").forEach(t => t.addEventListener("input", () => { r[t.dataset.rq] = t.value; save(); }));
+    const past = Object.keys(db.reviews).filter(k => k !== wk && Object.values(db.reviews[k]).some(v => v && v.trim())).sort().reverse();
+    document.getElementById("pastReviews").innerHTML = past.length ? past.map(k =>
+      '<details class="tool"><summary>Week of ' + esc(k) + "</summary>" + REVIEW_Q.map(([id, q]) => db.reviews[k][id] ? "<p><strong>" + esc(q) + "</strong><br>" + esc(db.reviews[k][id]) + "</p>" : "").join("") + "</details>").join("") : "None yet.";
+  }
+
+  // ---------- backup ----------
+  const msg = document.getElementById("dataMsg");
+  document.getElementById("exportBtn").onclick = () => {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = "growth-tracker-backup-" + iso(new Date()) + ".json"; a.click();
+    msg.textContent = "Backup downloaded.";
+  };
+  document.getElementById("importFile").onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => { const d = JSON.parse(t); if (!d.days) throw 0; db = d; db.reviews = db.reviews || {}; save(); renderToday(); pn.value = db.people || ""; msg.textContent = "Backup loaded."; })
+      .catch(() => { msg.textContent = "That file doesn't look like a Growth Tracker backup."; });
+  };
+  document.getElementById("wipeBtn").onclick = () => {
+    if (!confirm("Delete every entry in this browser? This can't be undone.")) return;
+    db = { days: {}, reviews: {}, people: "" }; save(); renderToday(); pn.value = ""; msg.textContent = "All entries deleted.";
+  };
+
+  renderToday();
+})();
+</script>
+</body>
+</html>
