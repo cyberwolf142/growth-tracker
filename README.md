@@ -9,9 +9,15 @@ A personal growth tracker and helper, built from a weekly plan of small habits a
 - **Sunday review:** weekly reflection questions, with past reviews saved
 - **Backup:** copy your data as text and paste it back on another device
 
-## Privacy
+## Privacy and security
 
-Everything you enter is saved only in your browser (localStorage) on your device. Nothing is sent to GitHub or anywhere else. Use **Backup** to copy your data and move it between devices.
+- **Passcode lock.** The first time you open it, you choose a passcode. You need it every time you open the tracker.
+- **Encrypted entries.** Everything you enter is encrypted in your browser with AES-256-GCM, using a key made from your passcode (PBKDF2, 310,000 rounds). Only the encrypted version is stored.
+- **Auto-lock.** It locks after 5 minutes without use, or after a minute in the background. There's also a Lock button.
+- **Nothing leaves your device.** There's no server. A strict Content Security Policy stops the page from sending data anywhere.
+- **Encrypted backups.** Backups can only be opened with the passcode they were made with.
+
+If you forget your passcode, your entries can't be recovered. This repo and site are public, but they only hold the blank app, never your entries.
 
 ## Use it
 

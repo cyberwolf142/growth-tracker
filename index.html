@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Growth Tracker</title>
 <style>
 :root {
@@ -66,13 +68,46 @@ td.yes { color: var(--accent); font-weight: 700; }
 .stars span { color: var(--star); }
 button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .circle { } @media (prefers-reduced-motion: reduce) { .circle { transition: none; } }
+.lock { display: none; min-height: 100vh; align-items: center; justify-content: center; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+body:not(.unlocked) .lock { display: flex; }
+body:not(.unlocked) > header, body:not(.unlocked) > nav, body:not(.unlocked) > main, body:not(.unlocked) > footer { display: none; }
+.lock .card { width: 100%; max-width: 380px; }
+.lock h1 { margin: 0 0 4px; font-size: 1.4rem; }
+.lock input[type=password] { margin-top: 10px; }
+.lock .btn { width: 100%; margin-top: 12px; }
+.err { color: var(--danger); font-size: .92rem; min-height: 1.2em; margin: 8px 0 0; }
+.linkbtn { background: none; border: 0; color: var(--muted); text-decoration: underline; font: inherit; font-size: .88rem; cursor: pointer; padding: 0; margin-top: 14px; }
+input[type=password] { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+#lockNow { margin-left: auto; }
 footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); color: var(--muted); font-size: .85rem; }
 </style>
 </head>
 <body>
+<div class="lock" id="lock">
+  <form class="card" id="lockForm" autocomplete="off">
+    <h1>Growth Tracker</h1>
+    <p class="muted" id="lockMsg">Enter your passcode to open your tracker.</p>
+    <label for="pass" class="muted" style="display:block;margin-top:8px">Passcode</label>
+    <input type="password" id="pass" autocomplete="current-password">
+    <div id="confirmWrap" hidden>
+      <label for="pass2" class="muted" style="display:block;margin-top:8px">Type it again</label>
+      <input type="password" id="pass2" autocomplete="new-password">
+    </div>
+    <p class="err" id="lockErr" role="alert"></p>
+    <button class="btn" type="submit" id="unlockBtn">Unlock</button>
+    <div id="forgotWrap">
+      <button class="linkbtn" type="button" id="forgotBtn">Forgot your passcode?</button>
+      <div id="forgotBox" hidden>
+        <p class="muted">There's no way to recover a forgotten passcode. Your entries are encrypted with it. You can erase everything on this device and start fresh.</p>
+        <button class="btn" type="button" id="eraseBtn" style="background:var(--danger)">Erase and start over</button>
+      </div>
+    </div>
+  </form>
+</div>
+
 <header>
   <h1>Growth Tracker</h1>
-  <p>Small daily habits, one exercise a day, and tools for hard moments. Everything you type stays in this browser.</p>
+  <p>Small daily habits, one exercise a day, and tools for hard moments. Everything you type is encrypted with your passcode and stays in this browser.</p>
 </header>
 <nav><div class="inner" id="tabs">
   <button data-tab="today" class="active">Today</button>
@@ -80,7 +115,8 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   <button data-tab="toolkit">Hard moments</button>
   <button data-tab="others">Helping others</button>
   <button data-tab="review">Sunday review</button>
-  <button data-tab="data">Backup</button>
+  <button data-tab="data">Backup &amp; security</button>
+  <button id="lockNow" title="Lock now">Lock</button>
 </div></nav>
 
 <main>
@@ -222,20 +258,39 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
 <!-- DATA -->
 <section id="data">
   <div class="card">
+    <h2>Security</h2>
+    <p class="muted">Your entries are encrypted on this device with your passcode (AES-256). The tracker locks itself after 5 minutes without use, or when you leave it in the background for a minute. If you forget your passcode, your entries can't be recovered.</p>
+    <h3 style="margin-top:12px">Change passcode</h3>
+    <label for="oldPass" class="muted">Current passcode</label>
+    <input type="password" id="oldPass" autocomplete="current-password">
+    <label for="newPass" class="muted" style="display:block;margin-top:8px">New passcode (at least 6 characters)</label>
+    <input type="password" id="newPass" autocomplete="new-password">
+    <label for="newPass2" class="muted" style="display:block;margin-top:8px">Type the new one again</label>
+    <input type="password" id="newPass2" autocomplete="new-password">
+    <div class="row" style="margin-top:10px"><button class="btn" id="changePassBtn">Change passcode</button></div>
+    <p id="passMsg" class="muted"></p>
+  </div>
+  <div class="card">
     <h2>Backup</h2>
-    <p class="muted">Your entries live only in this browser on this device. Copy a backup now and then, and paste it on another device to move your data.</p>
+    <p class="muted">Backups are encrypted too, so only your passcode can open them. Copy one now and then and keep it somewhere safe, like a note or an email to yourself.</p>
     <div class="row">
       <button class="btn" id="exportBtn">Copy backup</button>
-      <button class="btn ghost" id="importBtn">Load pasted backup</button>
+    </div>
+    <h3 style="margin-top:14px">Restore a backup</h3>
+    <p class="muted">Paste a backup below (or load a backup file), enter the passcode it was made with, and press Restore. This replaces what's on this device.</p>
+    <textarea id="backupText" placeholder="Paste a backup here" style="min-height:110px;font-family:ui-monospace,monospace;font-size:.85rem"></textarea>
+    <label for="restorePass" class="muted" style="display:block;margin-top:8px">Passcode the backup was made with</label>
+    <input type="password" id="restorePass" autocomplete="off">
+    <div class="row" style="margin-top:10px">
+      <button class="btn ghost" id="importBtn">Restore</button>
       <label class="btn ghost" for="importFile">Load backup file</label>
       <input type="file" id="importFile" accept="application/json,.json,.txt" hidden>
     </div>
     <p id="dataMsg" class="muted"></p>
-    <textarea id="backupText" placeholder="Your backup appears here after Copy backup. To restore, paste a backup here and press Load pasted backup." style="min-height:120px;font-family:ui-monospace,monospace;font-size:.85rem"></textarea>
   </div>
   <div class="card">
     <h3>Start over</h3>
-    <p class="muted">Deletes every entry in this browser. Copy a backup first.</p>
+    <p class="muted">Deletes every entry on this device. Copy a backup first.</p>
     <div class="row">
       <button class="btn ghost" id="wipeBtn" style="color:var(--danger);border-color:var(--danger)">Delete all entries</button>
       <button class="btn" id="wipeConfirm" style="background:var(--danger)" hidden>Yes, delete everything</button>
@@ -318,12 +373,38 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   ];
 
   // ---------- storage ----------
-  function load() {
-    try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.days) return d; } catch (e) {}
-    return { days: {}, reviews: {}, people: "" };
+  const ENC_KEY = "growth-tracker-enc-v1";
+  const empty = () => ({ days: {}, reviews: {}, people: "" });
+  let db = empty(), key = null, salt = null, saveTimer = null;
+
+  const te = new TextEncoder(), td = new TextDecoder();
+  const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch (e) {} };
+
+  async function deriveKey(pass, saltBytes) {
+    const base = await crypto.subtle.importKey("raw", te.encode(pass), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt: saltBytes, iterations: 310000, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
   }
-  let db = load();
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
+  async function seal(obj, k, saltBytes) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, te.encode(JSON.stringify(obj)));
+    return { app: "growth-tracker", v: 1, salt: b64(saltBytes), iv: b64(iv), ct: b64(ct) };
+  }
+  async function open(blob, pass) {
+    const sb = unb64(blob.salt), k = await deriveKey(pass, sb);
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(blob.iv) }, k, unb64(blob.ct));
+    return { data: JSON.parse(td.decode(pt)), key: k, salt: sb };
+  }
+  async function persist() {
+    clearTimeout(saveTimer); saveTimer = null;
+    if (!key) return;
+    lsSet(ENC_KEY, JSON.stringify(await seal(db, key, salt)));
+  }
+  function save() { if (!key) return; clearTimeout(saveTimer); saveTimer = setTimeout(persist, 300); }
 
   // ---------- dates ----------
   const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -337,7 +418,7 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
 
   // ---------- tabs ----------
   document.getElementById("tabs").addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
+    const b = e.target.closest("button"); if (!b || !b.dataset.tab) return;
     document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
     document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
     if (b.dataset.tab === "week") renderWeek();
@@ -463,7 +544,7 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   // ---------- others ----------
   document.getElementById("othersList").innerHTML = OTHERS.map(([t, b]) =>
     '<label class="check"><span><strong>' + esc(t) + '</strong><br><span class="muted">' + esc(b) + "</span></span></label>").join("");
-  const pn = document.getElementById("peopleNote"); pn.value = db.people || "";
+  const pn = document.getElementById("peopleNote");
   pn.addEventListener("input", () => { db.people = pn.value; save(); });
 
   // ---------- review ----------
@@ -482,23 +563,114 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   // ---------- backup ----------
   const msg = document.getElementById("dataMsg");
   const bt = document.getElementById("backupText");
-  function restore(text) {
-    try { const d = JSON.parse(text); if (!d || !d.days) throw 0;
-      db = d; db.reviews = db.reviews || {}; save(); renderToday(); pn.value = db.people || ""; msg.textContent = "Backup loaded.";
-    } catch (e) { msg.textContent = "That doesn't look like a Growth Tracker backup. Check you copied all of it."; }
+  function renderAll() {
+    renderToday(); pn.value = db.people || "";
+    const active = document.querySelector("#tabs button.active");
+    if (active && active.dataset.tab === "week") renderWeek();
+    if (active && active.dataset.tab === "review") renderReview();
   }
-  document.getElementById("exportBtn").onclick = () => {
-    const text = JSON.stringify(db); bt.value = text;
-    const fallback = () => { bt.focus(); bt.select(); msg.textContent = "Backup shown below. Select it all and copy it somewhere safe, like a note."; };
-    try { navigator.clipboard.writeText(text).then(() => { msg.textContent = "Backup copied. Paste it somewhere safe, like a note or email to yourself."; }, fallback); } catch (e) { fallback(); }
+  document.getElementById("exportBtn").onclick = async () => {
+    await persist();
+    const text = lsGet(ENC_KEY) || ""; bt.value = text;
+    const fallback = () => { bt.focus(); bt.select(); msg.textContent = "Backup shown above. Select it all and copy it somewhere safe."; };
+    try { navigator.clipboard.writeText(text).then(() => { msg.textContent = "Encrypted backup copied. Paste it somewhere safe, like a note or an email to yourself."; }, fallback); } catch (e) { fallback(); }
   };
+  async function restore(text) {
+    let blob;
+    try { blob = JSON.parse(text); } catch (e) { msg.textContent = "That doesn't look like a Growth Tracker backup. Check you copied all of it."; return; }
+    try {
+      if (blob && blob.ct) { const r = await open(blob, document.getElementById("restorePass").value); db = r.data; }
+      else if (blob && blob.days) { db = blob; }
+      else throw 0;
+      db.reviews = db.reviews || {}; db.days = db.days || {};
+      await persist(); renderAll(); document.getElementById("restorePass").value = "";
+      msg.textContent = "Backup restored. It's now saved with your current passcode.";
+    } catch (e) { msg.textContent = "Couldn't open that backup. Check the passcode it was made with."; }
+  }
   document.getElementById("importBtn").onclick = () => restore(bt.value.trim());
-  document.getElementById("importFile").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(restore); };
+  document.getElementById("importFile").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(t => { bt.value = t; msg.textContent = "Backup file loaded. Enter its passcode and press Restore."; }); };
   const wc = document.getElementById("wipeConfirm");
   document.getElementById("wipeBtn").onclick = () => { wc.hidden = !wc.hidden; };
-  wc.onclick = () => { db = { days: {}, reviews: {}, people: "" }; save(); renderToday(); pn.value = ""; wc.hidden = true; msg.textContent = "All entries deleted."; };
+  wc.onclick = async () => { db = empty(); await persist(); renderAll(); wc.hidden = true; msg.textContent = "All entries deleted."; };
 
-  renderToday();
+  // ---------- change passcode ----------
+  document.getElementById("changePassBtn").onclick = async () => {
+    const pm = document.getElementById("passMsg");
+    const o = document.getElementById("oldPass"), n = document.getElementById("newPass"), n2 = document.getElementById("newPass2");
+    if (n.value.length < 6) { pm.textContent = "The new passcode needs at least 6 characters."; return; }
+    if (n.value !== n2.value) { pm.textContent = "The two new passcodes don't match."; return; }
+    try { await persist(); await open(JSON.parse(lsGet(ENC_KEY)), o.value); }
+    catch (e) { pm.textContent = "Your current passcode isn't right."; return; }
+    salt = crypto.getRandomValues(new Uint8Array(16)); key = await deriveKey(n.value, salt); await persist();
+    o.value = n.value = n2.value = ""; pm.textContent = "Passcode changed. Use the new one next time you unlock. Old backups still open with the old passcode.";
+  };
+
+  // ---------- lock ----------
+  const OLD_KEY = "growth-tracker-v1";
+  const lockForm = document.getElementById("lockForm"), passEl = document.getElementById("pass"), pass2El = document.getElementById("pass2");
+  const lockErr = document.getElementById("lockErr"), lockMsg = document.getElementById("lockMsg");
+  let failures = 0, waitUntil = 0, idleTimer = null, hiddenAt = 0;
+
+  function showLock() {
+    const setup = !lsGet(ENC_KEY);
+    document.getElementById("confirmWrap").hidden = !setup;
+    document.getElementById("forgotWrap").hidden = setup;
+    document.getElementById("forgotBox").hidden = true;
+    lockMsg.textContent = setup
+      ? "Choose a passcode (at least 6 characters). Your entries will be encrypted with it. There's no way to recover it, so pick one you'll remember."
+      : "Enter your passcode to open your tracker.";
+    document.getElementById("unlockBtn").textContent = setup ? "Set passcode" : "Unlock";
+    passEl.autocomplete = setup ? "new-password" : "current-password";
+    passEl.value = pass2El.value = ""; lockErr.textContent = "";
+    document.body.classList.remove("unlocked");
+    setTimeout(() => passEl.focus(), 50);
+  }
+  async function lockNow() {
+    if (key) await persist();
+    key = null; salt = null; db = empty();
+    document.querySelectorAll("main textarea, main input[type=password]").forEach(t => t.value = "");
+    msg.textContent = ""; clearTimeout(idleTimer);
+    showLock();
+  }
+  function bumpIdle() { clearTimeout(idleTimer); if (key) idleTimer = setTimeout(lockNow, 5 * 60 * 1000); }
+  ["click", "keydown", "input", "touchstart", "scroll"].forEach(ev => document.addEventListener(ev, bumpIdle, { passive: true }));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { hiddenAt = Date.now(); if (key) persist(); }
+    else if (key && hiddenAt && Date.now() - hiddenAt > 60 * 1000) lockNow();
+  });
+  window.addEventListener("pagehide", () => { if (key) persist(); });
+  document.getElementById("lockNow").onclick = lockNow;
+
+  lockForm.addEventListener("submit", async e => {
+    e.preventDefault(); lockErr.textContent = "";
+    const pass = passEl.value, stored = lsGet(ENC_KEY);
+    if (!stored) {
+      if (pass.length < 6) { lockErr.textContent = "Use at least 6 characters."; return; }
+      if (pass !== pass2El.value) { lockErr.textContent = "The two passcodes don't match."; return; }
+      salt = crypto.getRandomValues(new Uint8Array(16)); key = await deriveKey(pass, salt);
+      let old = null; try { old = JSON.parse(lsGet(OLD_KEY)); } catch (e2) {}
+      db = old && old.days ? old : empty();
+      await persist(); lsDel(OLD_KEY);
+    } else {
+      if (Date.now() < waitUntil) { lockErr.textContent = "Too many tries. Wait " + Math.ceil((waitUntil - Date.now()) / 1000) + " seconds."; return; }
+      document.getElementById("unlockBtn").disabled = true;
+      try { const r = await open(JSON.parse(stored), pass); db = r.data; key = r.key; salt = r.salt; failures = 0; }
+      catch (e2) {
+        failures++; if (failures >= 5) { waitUntil = Date.now() + 30000; failures = 0; }
+        lockErr.textContent = "That passcode isn't right."; passEl.select();
+        document.getElementById("unlockBtn").disabled = false; return;
+      }
+      document.getElementById("unlockBtn").disabled = false;
+    }
+    db.days = db.days || {}; db.reviews = db.reviews || {};
+    passEl.value = pass2El.value = "";
+    current = new Date(); current.setHours(0, 0, 0, 0); weekStart = mondayOf(current);
+    document.body.classList.add("unlocked"); renderAll(); bumpIdle(); window.scrollTo(0, 0);
+  });
+  document.getElementById("forgotBtn").onclick = () => { const f = document.getElementById("forgotBox"); f.hidden = !f.hidden; };
+  document.getElementById("eraseBtn").onclick = () => { lsDel(ENC_KEY); lsDel(OLD_KEY); showLock(); };
+
+  showLock();
 })();
 </script>
 </body>
