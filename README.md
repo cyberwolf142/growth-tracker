@@ -6,7 +6,7 @@ A personal growth tracker and helper, built from a weekly plan of small habits a
 - **Today:** today's exercise with steps, today's events and next project steps, daily habit checkboxes, energy (spoons), mood, and notes
 - **This week:** a habit grid, average mood, and gold-star count
 - **Calendar:** month view with events (one-off or repeating weekly, monthly, yearly), project due dates, and the days you did your habits
-- **Projects:** break a project into steps of 30 minutes or less, with a progress bar, next step, and optional due dates
+- **Projects:** guided setup, one question at a time: ask why it matters at least 5 times, set a clear finish line, and plan the first 5 steps (30 minutes or less each). Your deepest reason shows next to every step. A focus timer for each step, celebrations when you finish one, and a gentle nudge after 7 days without progress. Built with autistic and ADHD brains in mind.
 - **Hard moments:** a breathing coach (5-7-8, bee, box), 5-4-3-2-1 grounding, and quick tools
 - **Helping others:** ways to support someone who's struggling
 - **Sunday review:** weekly reflection questions, with past reviews saved

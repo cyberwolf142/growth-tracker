@@ -70,6 +70,28 @@ aside#side { position: fixed; top: 0; bottom: 0; left: 0; width: 240px; z-index:
 .formrow > * { min-width: 0; }
 select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
 @media (max-width: 560px) { .formrow { grid-template-columns: 1fr 1fr; } .formrow > input[type=text] { grid-column: 1 / -1; } }
+.wzsteps { display: flex; gap: 4px; margin: 10px 0 4px; }
+.wzsteps i { flex: 1; height: 5px; border-radius: 999px; background: var(--line); }
+.wzsteps i.on { background: var(--accent); }
+.wzq { display: block; font-size: 1.1rem; font-weight: 700; margin: 14px 0 4px; text-wrap: balance; }
+.hint { color: var(--muted); font-size: .9rem; margin: 0 0 8px; }
+.wzprev { border-left: 3px solid var(--accent); padding: 4px 10px; margin: 10px 0; color: var(--muted); overflow-wrap: anywhere; }
+.whys { margin: 8px 0 0; padding-left: 20px; } .whys li { margin: 2px 0; overflow-wrap: anywhere; }
+.purpose { background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; margin-top: 8px; overflow-wrap: anywhere; }
+.purpose b { color: var(--accent); }
+.nudge { border: 1px dashed var(--star); border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: .92rem; }
+.steprow { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 8px; align-items: center; margin-top: 8px; }
+.steprow > * { min-width: 0; }
+.steprow .n { color: var(--muted); font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .steprow { grid-template-columns: 28px 1fr 1fr; } .steprow input[type=text] { grid-column: 2 / -1; } .steprow select { grid-column: 2; } }
+.warn { color: var(--star); font-size: .92rem; }
+.timer { border: 2px solid var(--accent); }
+.timer .clock { font-size: 2.6rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; margin: 6px 0; }
+.timer .bar { height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.timer .bar span { display: block; height: 100%; background: var(--accent); transition: width 1s linear; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 30; max-width: min(440px, calc(100vw - 32px));
+  background: var(--text); color: var(--bg); padding: 12px 16px; border-radius: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.25); font-weight: 600; }
+.btn.small { padding: 5px 12px; font-size: .9rem; }
 .next { background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: .95rem; }
 /* calendar */
 .calhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
@@ -204,6 +226,7 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     <button class="pill" id="nextDay" aria-label="Next day">&rarr;</button>
   </div>
 
+  <div class="card timer" data-timerhost hidden></div>
   <div class="card focus" id="focusCard"></div>
 
   <div class="card">
@@ -271,6 +294,8 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
   </div>
 </section>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
 <!-- CALENDAR -->
 <section id="calendar">
   <div class="card">
@@ -304,16 +329,12 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
 
 <!-- PROJECTS -->
 <section id="projects">
+  <div class="card timer" data-timerhost hidden></div>
   <div class="card">
     <h2>Start a project</h2>
-    <p class="muted">Anything you want to build or finish. Break it into steps of 30 minutes or less, so each one fits into a day.</p>
-    <form id="projForm" autocomplete="off">
-      <label for="projName" class="muted">Project name</label>
-      <input type="text" id="projName" placeholder="Learn to cook 5 meals, fix up my bike, build a website" required>
-      <label for="projWhy" class="muted" style="display:block;margin-top:8px">Why it matters to you (optional)</label>
-      <input type="text" id="projWhy" placeholder="I want to feel more independent">
-      <div class="row" style="margin-top:10px"><button class="btn" type="submit">Add project</button></div>
-    </form>
+    <p class="muted">One question at a time. You will dig into why it matters (at least 5 times), set a clear finish line, then plan your first 5 steps. Your answers save as you go, so you can stop and come back.</p>
+    <div class="wzsteps" id="wzDots" aria-hidden="true"></div>
+    <form id="projForm" autocomplete="off"></form>
   </div>
   <div id="projList"></div>
   <details class="card tool" id="doneWrap" hidden><summary>Finished projects <span class="muted" id="doneCount"></span></summary><div id="doneList" style="margin-top:10px"></div></details>
@@ -662,15 +683,23 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     return '<div class="step' + (st.done ? " done" : "") + '"><input type="checkbox" data-step="' + p.id + ":" + st.id + '"' + (st.done ? " checked" : "") + ' aria-label="Done"><span class="txt">' + esc(st.text) +
       (st.mins ? '<span class="chip">' + st.mins + " min</span>" : "") + due + '</span><button class="x" data-delstep="' + p.id + ":" + st.id + '" aria-label="Delete step">&times;</button></div>';
   }
+  const DAY = 86400000;
+  function lastActive(p) { const ds = p.steps.map(st => st.doneOn).filter(Boolean).sort(); return ds.length ? ds[ds.length - 1] : p.created; }
   function projectCard(p) {
     const total = p.steps.length, done = p.steps.filter(s => s.done).length, pct = total ? Math.round(done / total * 100) : 0;
     const next = p.steps.find(s => !s.done);
-    return '<div class="card" data-proj="' + p.id + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div style="min-width:0;flex:1"><h2 style="overflow-wrap:anywhere">' + esc(p.name) + "</h2>" +
-      (p.why ? '<div class="muted">' + esc(p.why) + "</div>" : "") + '</div><span class="muted" style="font-variant-numeric:tabular-nums">' + done + " / " + total + " steps</span></div>" +
+    const root = p.whys && p.whys.length ? p.whys[p.whys.length - 1] : p.why;
+    const idle = Math.floor((new Date().setHours(0, 0, 0, 0) - parseISO(lastActive(p))) / DAY);
+    return '<div class="card" data-proj="' + p.id + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div style="min-width:0;flex:1"><h2 style="overflow-wrap:anywhere">' + esc(p.name) + "</h2></div>" +
+      '<span class="muted" style="font-variant-numeric:tabular-nums">' + done + " / " + total + " steps</span></div>" +
+      (root ? '<div class="purpose"><b>Why I\'m doing this:</b> ' + esc(root) + "</div>" : "") +
+      (p.finish ? '<div class="muted" style="margin-top:6px"><strong>Finished when:</strong> ' + esc(p.finish) + "</div>" : "") +
+      (p.whys && p.whys.length ? '<details class="tool"><summary class="muted" style="font-weight:400;font-size:.9rem">All ' + p.whys.length + " whys</summary><ol class=\"whys\">" + p.whys.map(w => "<li>" + esc(w) + "</li>").join("") + "</ol></details>" : "") +
       '<div class="progress" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></div>' +
-      (p.done ? "" : next ? '<div class="next"><strong>Next step:</strong> ' + esc(next.text) + "</div>" : total ? '<div class="next"><strong>All steps done.</strong> Mark it finished, or add more.</div>' : '<div class="next">Add your first small step below.</div>') +
+      (!p.done && idle >= 7 ? '<div class="nudge"><strong>No steps done in ' + idle + ' days.</strong> That\'s OK. Re-read your why. If the next step feels too big, split it into something you can do in 5 minutes. If this project no longer matters, mark it finished or delete it so it stops taking up space.</div>' : "") +
+      (p.done ? "" : next ? '<div class="next row" style="justify-content:space-between"><span style="min-width:0;overflow-wrap:anywhere"><strong>Next step:</strong> ' + esc(next.text) + (next.mins ? " (" + next.mins + " min)" : "") + '</span><button class="btn small" data-start="' + p.id + ":" + next.id + '">Start</button></div>' : total ? '<div class="next"><strong>All steps done.</strong> Does it meet your finish line? Mark it finished, or add the next steps.</div>' : '<div class="next">Add your next small step below.</div>') +
       '<div style="margin-top:8px">' + p.steps.map(st => stepHTML(p, st)).join("") + "</div>" +
-      (p.done ? "" : '<form class="formrow" data-addstep="' + p.id + '" autocomplete="off"><input type="text" placeholder="Add a step (under 30 min)" aria-label="New step" required>' +
+      (p.done ? "" : '<form class="formrow" data-addstep="' + p.id + '" autocomplete="off"><input type="text" placeholder="Next step, starting with a verb (under 30 min)" aria-label="New step" required>' +
         '<select aria-label="Minutes"><option value="">Time</option><option>5</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option></select>' +
         '<input type="date" aria-label="Due date (optional)"><button class="btn" type="submit">Add</button></form>') +
       '<div class="row" style="margin-top:12px">' + (p.done ? '<button class="btn ghost" data-reopen="' + p.id + '">Reopen</button>' : '<button class="btn ghost" data-finish="' + p.id + '">Mark finished</button>') +
@@ -684,17 +713,169 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     document.getElementById("doneWrap").hidden = !fin.length;
     document.getElementById("doneCount").textContent = "(" + fin.length + ")";
     document.getElementById("doneList").innerHTML = fin.map(projectCard).join("");
+    if (!pf.contains(document.activeElement)) renderWizard();
+    if (ftimer) { showTimerHosts(true); drawTimer(); }
     updateBadges();
   }
   const findStep = ref => { const [pid, sid] = ref.split(":"); const p = db.projects.find(x => x.id === pid); return { p, st: p && p.steps.find(s => s.id === sid) }; };
-  document.getElementById("projForm").addEventListener("submit", e => {
+  // ---------- toast + celebration ----------
+  let toastT = null;
+  function toast(text) { const t = document.getElementById("toast"); t.textContent = text; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 4000); }
+  function celebrate(p) {
+    const left = p.steps.filter(s => !s.done).length, done = p.steps.length - left;
+    toast(left ? "Step done. " + done + " of " + p.steps.length + " on " + p.name + ". " + left + " to go." : "Every step on " + p.name + " is done. Check your finish line.");
+    const d = day(iso(new Date())); if (!d.checks.exercise) { /* project work counts as effort, not the daily exercise */ }
+  }
+
+  // ---------- focus timer ----------
+  let ftimer = null;
+  function startTimer(ref) {
+    const { p, st } = findStep(ref); if (!st) return;
+    const mins = st.mins || 15;
+    ftimer = { ref, total: mins * 60, end: Date.now() + mins * 60000, paused: null, iv: null };
+    ftimer.iv = setInterval(drawTimer, 1000);
+    drawTimer(); showTimerHosts(true);
+    const host = document.querySelector("section.active [data-timerhost]"); if (host) host.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function showTimerHosts(on) { document.querySelectorAll("[data-timerhost]").forEach(h => { h.hidden = !on; if (!on) h.innerHTML = ""; }); }
+  function stopTimer() { if (ftimer) clearInterval(ftimer.iv); ftimer = null; showTimerHosts(false); }
+  function drawTimer() {
+    if (!ftimer) return;
+    const { p, st } = findStep(ftimer.ref); if (!st || st.done) { stopTimer(); return; }
+    const left = Math.max(0, Math.round(((ftimer.paused || Date.now()) > ftimer.end ? 0 : ftimer.end - (ftimer.paused || Date.now())) / 1000));
+    const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+    const pct = Math.round((1 - left / ftimer.total) * 100);
+    const root = p.whys && p.whys.length ? p.whys[p.whys.length - 1] : p.why;
+    const html = '<div class="row" style="justify-content:space-between"><strong>Focus: ' + esc(st.text) + '</strong><span class="muted">' + esc(p.name) + "</span></div>" +
+      (root ? '<div class="purpose"><b>Why:</b> ' + esc(root) + "</div>" : "") +
+      '<div class="clock">' + (left ? mm + ":" + ss : "Time's up") + '</div><div class="bar"><span style="width:' + pct + '%"></span></div>' +
+      '<p class="muted" style="margin:8px 0 0">' + (left ? "Only this step. Everything else can wait." : "Done, or want 5 more minutes? Both are fine.") + "</p>" +
+      '<div class="row" style="margin-top:10px"><button class="btn" data-tm="done">I did it</button>' +
+      (left ? '<button class="btn ghost" data-tm="pause">' + (ftimer.paused ? "Resume" : "Pause") + "</button>" : '<button class="btn ghost" data-tm="more">5 more minutes</button>') +
+      '<button class="btn ghost" data-tm="stop">Stop</button></div>';
+    document.querySelectorAll("[data-timerhost]").forEach(h => { h.innerHTML = html; });
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-tm]"); if (!b || !ftimer) return;
+    const a = b.dataset.tm;
+    if (a === "done") { const { p, st } = findStep(ftimer.ref); st.done = true; st.doneOn = iso(new Date()); save(); stopTimer(); renderProjects(); renderTodayPlan(); celebrate(p); return; }
+    if (a === "stop") { stopTimer(); return; }
+    if (a === "pause") { if (ftimer.paused) { ftimer.end += Date.now() - ftimer.paused; ftimer.paused = null; } else ftimer.paused = Date.now(); }
+    if (a === "more") { ftimer.end = Date.now() + 5 * 60000; ftimer.total += 5 * 60; }
+    drawTimer();
+  });
+
+  // ---------- project setup wizard ----------
+  const MIN_WHYS = 5, FIRST_STEPS = 5, MAX_ACTIVE = 3;
+  const WHY_Q = [
+    ["Why is this project important to you?", "Example: \"I want to stop relying on takeout.\""],
+    ["Why does that matter to you?", "Answer the line above, not the project. Example: \"Takeout eats my money.\""],
+    ["Why is that important?", "Example: \"I want to save up for my own place.\""],
+    ["Why does that matter?", "Example: \"I want to feel like I can take care of myself.\""],
+    ["Why is that important to you, deep down?", "This is usually about how you want to feel or who you want to be."]
+  ];
+  const blankWz = () => ({ stage: "name", name: "", whys: [], finish: "", steps: [], ok3: false });
+  const getWz = () => { if (!db.wizard) db.wizard = blankWz(); return db.wizard; };
+  const pf = document.getElementById("projForm");
+  function wzReset() { db.wizard = blankWz(); save(); renderWizard(); }
+  function renderWizard() {
+    const wz = getWz(), active = (db.projects || []).filter(p => !p.done).length;
+    const whySlots = Math.max(MIN_WHYS, wz.whys.length + (wz.stage === "why" ? 1 : 0));
+    const total = 1 + whySlots + 1 + 1;
+    const pos = wz.stage === "name" ? 1 : wz.stage === "why" ? 2 + wz.whys.length : wz.stage === "more" ? 1 + whySlots : wz.stage === "finish" ? 2 + whySlots : total;
+    document.getElementById("wzDots").innerHTML = Array.from({ length: total }, (_, i) => '<i class="' + (i < pos ? "on" : "") + '"></i>').join("");
+    let h = "";
+    if (wz.stage === "name") {
+      h = (active >= MAX_ACTIVE && !wz.ok3 ? '<p class="warn">You have ' + active + ' active projects. Fewer open projects makes follow-through easier. Think about finishing or deleting one first.</p>' : "") +
+        '<label for="wzName" class="wzq">What do you want to build or finish?</label><p class="hint">Be specific. "Cook 5 new meals" works better than "eat better".</p>' +
+        '<input type="text" id="wzName" value="' + esc(wz.name) + '" placeholder="Fix up my bike" required>' +
+        '<div class="row" style="margin-top:10px"><button class="btn" type="submit">Next: why it matters</button>' + (wz.name ? '<button class="btn ghost" type="button" data-wz="cancel">Start over</button>' : "") + "</div>";
+    } else if (wz.stage === "why") {
+      const n = wz.whys.length, prev = n ? wz.whys[n - 1] : wz.name;
+      const [q, hint] = WHY_Q[n] || ["Why does that matter?", "Keep going until it feels true, not just correct."];
+      h = '<div class="muted" style="margin-top:8px">Why ' + (n + 1) + (n < MIN_WHYS ? " of " + MIN_WHYS : "") + "</div>" +
+        '<div class="wzprev">' + (n ? "You said: " : "Your project: ") + esc(prev) + "</div>" +
+        '<label for="wzWhy" class="wzq">' + esc(q) + '</label><p class="hint">' + esc(hint) + "</p>" +
+        '<input type="text" id="wzWhy" placeholder="Because..." required>' +
+        '<div class="row" style="margin-top:10px"><button class="btn ghost" type="button" data-wz="back">Back</button>' +
+        '<button class="btn" type="submit">' + (n + 1 < MIN_WHYS ? "Next why" : "Next") + "</button></div>";
+    } else if (wz.stage === "more") {
+      h = '<p class="wzq">You asked why ' + wz.whys.length + " times.</p>" +
+        '<div class="wzprev">Your deepest reason: ' + esc(wz.whys[wz.whys.length - 1]) + "</div>" +
+        '<p class="hint">Read it out loud. Does it feel true? This is what will show next to every step, so it should mean something to you.</p>' +
+        '<div class="row" style="margin-top:10px"><button class="btn ghost" type="button" data-wz="back">Back</button>' +
+        '<button class="btn ghost" type="button" data-wz="morewhy">Ask why again</button>' +
+        '<button class="btn" type="submit">Yes, that\'s it</button></div>';
+    } else if (wz.stage === "finish") {
+      h = '<label for="wzFinish" class="wzq">How will you know it\'s finished?</label><p class="hint">A clear finish line you could check off. Example: "I have cooked 5 different meals from scratch."</p>' +
+        '<input type="text" id="wzFinish" value="' + esc(wz.finish) + '" placeholder="It\'s done when..." required>' +
+        '<div class="row" style="margin-top:10px"><button class="btn ghost" type="button" data-wz="back">Back</button><button class="btn" type="submit">Next: first 5 steps</button></div>';
+    } else {
+      const opts = v => [5, 10, 15, 20, 25, 30].map(m => "<option" + (+(v || 15) === m ? " selected" : "") + ">" + m + "</option>").join("");
+      h = '<p class="wzq">What are your first 5 steps?</p><p class="hint">Start each with a verb (Buy, Open, Write, Call). Make step 1 tiny, 5 minutes, so it is easy to start. Each step 30 minutes or less. Dates are optional.</p>' +
+        Array.from({ length: FIRST_STEPS }, (_, i) => { const st = wz.steps[i] || {};
+          return '<div class="steprow"><span class="n">' + (i + 1) + '</span><input type="text" data-wzs="' + i + '" value="' + esc(st.text || "") + '" placeholder="' + (i ? "Step " + (i + 1) : "Tiny first step, like: Find the bike pump") + '" aria-label="Step ' + (i + 1) + '" required>' +
+            '<select data-wzm="' + i + '" aria-label="Minutes for step ' + (i + 1) + '">' + opts(st.mins || (i ? 15 : 5)) + '</select><input type="date" data-wzd="' + i + '" value="' + esc(st.due || "") + '" aria-label="Due date for step ' + (i + 1) + '"></div>'; }).join("") +
+        '<div class="row" style="margin-top:12px"><button class="btn ghost" type="button" data-wz="back">Back</button><button class="btn" type="submit">Save project</button>' +
+        '<button class="btn ghost" type="button" data-wz="cancel" style="margin-left:auto">Start over</button></div>';
+    }
+    pf.innerHTML = h;
+  }
+  function readSteps() {
+    const wz = getWz();
+    wz.steps = Array.from({ length: FIRST_STEPS }, (_, i) => ({
+      text: (pf.querySelector('[data-wzs="' + i + '"]') || {}).value || "",
+      mins: (pf.querySelector('[data-wzm="' + i + '"]') || {}).value || "",
+      due: (pf.querySelector('[data-wzd="' + i + '"]') || {}).value || "" }));
+  }
+  function focusWz() { const f = pf.querySelector("input[type=text]"); if (f) f.focus(); }
+  pf.addEventListener("submit", e => {
     e.preventDefault();
-    const n = document.getElementById("projName"), w = document.getElementById("projWhy");
-    if (!n.value.trim()) return;
-    db.projects = db.projects || [];
-    db.projects.unshift({ id: uid(), name: n.value.trim(), why: w.value.trim(), created: iso(new Date()), done: false, steps: [] });
-    n.value = w.value = ""; save(); renderProjects();
-    const first = document.querySelector("#projList [data-addstep] input[type=text]"); if (first) first.focus();
+    const wz = getWz();
+    if (wz.stage === "name") {
+      const v = document.getElementById("wzName").value.trim(); if (!v) return;
+      wz.name = v; wz.ok3 = true; wz.stage = "why";
+    } else if (wz.stage === "why") {
+      const v = document.getElementById("wzWhy").value.trim(); if (!v) return;
+      wz.whys.push(v); wz.stage = wz.whys.length >= MIN_WHYS ? "more" : "why";
+    } else if (wz.stage === "more") {
+      wz.stage = "finish";
+    } else if (wz.stage === "finish") {
+      const v = document.getElementById("wzFinish").value.trim(); if (!v) return;
+      wz.finish = v; wz.stage = "steps";
+    } else {
+      readSteps();
+      const empty = wz.steps.findIndex(st => !st.text.trim());
+      if (empty >= 0) { save(); pf.querySelector('[data-wzs="' + empty + '"]').focus(); return; }
+      db.projects = db.projects || [];
+      db.projects.unshift({ id: uid(), name: wz.name, whys: wz.whys.slice(), finish: wz.finish, created: iso(new Date()), done: false,
+        steps: wz.steps.map(st => ({ id: uid(), text: st.text.trim(), mins: st.mins ? +st.mins : null, due: st.due || null, done: false })) });
+      db.wizard = blankWz(); save(); renderWizard(); renderProjects();
+      toast("Project saved. Your first step is ready on Today.");
+      const card = document.querySelector("#projList .card"); if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    save(); renderWizard(); focusWz();
+  });
+  pf.addEventListener("input", e => {
+    const wz = getWz();
+    if (e.target.id === "wzName") wz.name = e.target.value;
+    if (e.target.id === "wzFinish") wz.finish = e.target.value;
+    if (e.target.matches("[data-wzs], [data-wzm], [data-wzd]")) readSteps();
+    save();
+  });
+  pf.addEventListener("click", e => {
+    const b = e.target.closest("[data-wz]"); if (!b) return;
+    const wz = getWz(), act = b.dataset.wz;
+    if (act === "cancel") { wzReset(); focusWz(); return; }
+    if (act === "morewhy") wz.stage = "why";
+    else if (act === "back") {
+      if (wz.stage === "steps") { readSteps(); wz.stage = "finish"; }
+      else if (wz.stage === "finish") wz.stage = "more";
+      else if (wz.stage === "more") { wz.whys.pop(); wz.stage = "why"; }
+      else if (wz.stage === "why") { if (wz.whys.length) wz.whys.pop(); else wz.stage = "name"; }
+    }
+    save(); renderWizard(); focusWz();
   });
   const projSection = document.getElementById("projects");
   projSection.addEventListener("submit", e => {
@@ -708,12 +889,14 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
   });
   projSection.addEventListener("change", e => {
     const c = e.target.closest("[data-step]"); if (!c) return;
-    const { st } = findStep(c.dataset.step); st.done = c.checked; st.doneOn = c.checked ? iso(new Date()) : null; save(); renderProjects();
+    const { p, st } = findStep(c.dataset.step); st.done = c.checked; st.doneOn = c.checked ? iso(new Date()) : null; save(); renderProjects();
+    if (c.checked) celebrate(p);
   });
   projSection.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.delstep) { const { p, st } = findStep(b.dataset.delstep); p.steps = p.steps.filter(s => s !== st); save(); renderProjects(); }
-    else if (b.dataset.finish) { db.projects.find(x => x.id === b.dataset.finish).done = true; save(); renderProjects(); }
+    else if (b.dataset.finish) { db.projects.find(x => x.id === b.dataset.finish).done = true; save(); renderProjects(); toast("Project finished. You followed through. That counts for a lot."); }
+    else if (b.dataset.start) { startTimer(b.dataset.start); }
     else if (b.dataset.reopen) { db.projects.find(x => x.id === b.dataset.reopen).done = false; save(); renderProjects(); }
     else if (b.dataset.delproj) { const y = b.parentNode.querySelector("[data-delprojyes]"); y.hidden = !y.hidden; }
     else if (b.dataset.delprojyes) { db.projects = db.projects.filter(x => x.id !== b.dataset.delprojyes); save(); renderProjects(); }
@@ -726,14 +909,16 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
     let html = evs.map(ev => '<div class="evt"><span class="time">' + esc(ev.time || "All day") + '</span><span class="txt">' + esc(ev.title) + "</span></div>").join("");
     (db.projects || []).filter(p => !p.done).forEach(p => {
       const st = p.steps.find(s => !s.done); if (!st) return;
+      const root = p.whys && p.whys.length ? p.whys[p.whys.length - 1] : p.why;
       html += '<div class="step"><input type="checkbox" data-tstep="' + p.id + ":" + st.id + '" aria-label="Done"><span class="txt">' + esc(st.text) + (st.mins ? '<span class="chip">' + st.mins + " min</span>" : "") +
-        '<br><span class="muted">' + esc(p.name) + "</span></span></div>";
+        '<br><span class="muted">' + esc(p.name) + (root ? " &middot; Why: " + esc(root) : "") + '</span></span><button class="btn small" data-start="' + p.id + ":" + st.id + '">Start</button></div>';
     });
     document.getElementById("todayPlan").innerHTML = html || '<p class="muted">Nothing on the calendar and no project steps waiting. Add some from Calendar or Projects in the side panel.</p>';
   }
+  document.getElementById("todayPlan").addEventListener("click", e => { const b = e.target.closest("[data-start]"); if (b) startTimer(b.dataset.start); });
   document.getElementById("todayPlan").addEventListener("change", e => {
     const c = e.target.closest("[data-tstep]"); if (!c || !c.checked) return;
-    const { st } = findStep(c.dataset.tstep); st.done = true; st.doneOn = iso(new Date()); save();
+    const { p, st } = findStep(c.dataset.tstep); st.done = true; st.doneOn = iso(new Date()); save(); celebrate(p);
     setTimeout(renderTodayPlan, 350);
   });
 
@@ -939,7 +1124,7 @@ footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left
   }
   async function lockNow() {
     if (key) await persist();
-    key = null; salt = null; db = empty();
+    stopTimer(); key = null; salt = null; db = empty();
     document.querySelectorAll("main textarea, main input[type=password]").forEach(t => t.value = "");
     msg.textContent = ""; clearTimeout(idleTimer);
     showLock();
