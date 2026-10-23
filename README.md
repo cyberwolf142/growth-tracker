@@ -7,11 +7,11 @@ A personal growth tracker and helper, built from a weekly plan of small habits a
 - **Hard moments:** a breathing coach (5-7-8, bee, box), 5-4-3-2-1 grounding, and quick tools
 - **Helping others:** ways to support someone who's struggling
 - **Sunday review:** weekly reflection questions, with past reviews saved
-- **Backup:** download or load your data as a JSON file
+- **Backup:** copy your data as text and paste it back on another device
 
 ## Privacy
 
-Everything you enter is saved only in your browser (localStorage) on your device. Nothing is sent to GitHub or anywhere else. Use **Backup** to move data between devices.
+Everything you enter is saved only in your browser (localStorage) on your device. Nothing is sent to GitHub or anywhere else. Use **Backup** to copy your data and move it between devices.
 
 ## Use it
 

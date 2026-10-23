@@ -11,21 +11,23 @@
   --accent: #2f6f5e; --accent-soft: #e3efe9; --star: #c98a12; --danger: #b3412f;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #15181b; --card: #1e2226; --text: #e8e6e1; --muted: #9aa1a8; --line: #30353a;
-    --accent: #6cc0a6; --accent-soft: #23352f; --star: #e8b54a; --danger: #e07a68; }
+  :root:not([data-theme="light"]) { --bg: #15181b; --card: #1e2226; --text: #e8e6e1; --muted: #9aa1a8; --line: #30353a;
+    --accent: #6cc0a6; --accent-soft: #23352f; --star: #e8b54a; --danger: #e07a68; color-scheme: dark; }
 }
+:root[data-theme="dark"] { --bg: #15181b; --card: #1e2226; --text: #e8e6e1; --muted: #9aa1a8; --line: #30353a;
+    --accent: #6cc0a6; --accent-soft: #23352f; --star: #e8b54a; --danger: #e07a68; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-header { padding: 20px 16px 8px; max-width: 860px; margin: 0 auto; }
+header { padding-block: 20px 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 860px; margin: 0 auto; }
 header h1 { margin: 0; font-size: 1.5rem; }
 header p { margin: 4px 0 0; color: var(--muted); }
-nav { position: sticky; top: 0; z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
-nav .inner { max-width: 860px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding: 8px 16px; }
+nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav .inner { max-width: 860px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 nav button { border: 0; background: none; color: var(--muted); padding: 8px 12px; border-radius: 999px;
   font: inherit; cursor: pointer; white-space: nowrap; }
 nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-main { max-width: 860px; margin: 0 auto; padding: 16px; }
+main { max-width: 860px; margin: 0 auto; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 section { display: none; } section.active { display: block; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
 .card h2 { margin: 0 0 4px; font-size: 1.15rem; } .card h3 { margin: 0 0 6px; font-size: 1rem; }
@@ -62,7 +64,9 @@ td.yes { color: var(--accent); font-weight: 700; }
 .crisis { border-color: var(--danger); }
 .crisis h3 { color: var(--danger); }
 .stars span { color: var(--star); }
-footer { max-width: 860px; margin: 0 auto; padding: 8px 16px 40px; color: var(--muted); font-size: .85rem; }
+button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.circle { } @media (prefers-reduced-motion: reduce) { .circle { transition: none; } }
+footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); color: var(--muted); font-size: .85rem; }
 </style>
 </head>
 <body>
@@ -219,18 +223,23 @@ footer { max-width: 860px; margin: 0 auto; padding: 8px 16px 40px; color: var(--
 <section id="data">
   <div class="card">
     <h2>Backup</h2>
-    <p class="muted">Your entries live only in this browser on this device. Download a backup now and then, and load it on another device to move your data.</p>
+    <p class="muted">Your entries live only in this browser on this device. Copy a backup now and then, and paste it on another device to move your data.</p>
     <div class="row">
-      <button class="btn" id="exportBtn">Download backup</button>
-      <label class="btn ghost" for="importFile">Load backup</label>
-      <input type="file" id="importFile" accept="application/json" hidden>
+      <button class="btn" id="exportBtn">Copy backup</button>
+      <button class="btn ghost" id="importBtn">Load pasted backup</button>
+      <label class="btn ghost" for="importFile">Load backup file</label>
+      <input type="file" id="importFile" accept="application/json,.json,.txt" hidden>
     </div>
     <p id="dataMsg" class="muted"></p>
+    <textarea id="backupText" placeholder="Your backup appears here after Copy backup. To restore, paste a backup here and press Load pasted backup." style="min-height:120px;font-family:ui-monospace,monospace;font-size:.85rem"></textarea>
   </div>
   <div class="card">
     <h3>Start over</h3>
-    <p class="muted">Deletes every entry in this browser. Download a backup first.</p>
-    <button class="btn ghost" id="wipeBtn" style="color:var(--danger);border-color:var(--danger)">Delete all entries</button>
+    <p class="muted">Deletes every entry in this browser. Copy a backup first.</p>
+    <div class="row">
+      <button class="btn ghost" id="wipeBtn" style="color:var(--danger);border-color:var(--danger)">Delete all entries</button>
+      <button class="btn" id="wipeConfirm" style="background:var(--danger)" hidden>Yes, delete everything</button>
+    </div>
   </div>
 </section>
 </main>
@@ -472,21 +481,22 @@ footer { max-width: 860px; margin: 0 auto; padding: 8px 16px 40px; color: var(--
 
   // ---------- backup ----------
   const msg = document.getElementById("dataMsg");
+  const bt = document.getElementById("backupText");
+  function restore(text) {
+    try { const d = JSON.parse(text); if (!d || !d.days) throw 0;
+      db = d; db.reviews = db.reviews || {}; save(); renderToday(); pn.value = db.people || ""; msg.textContent = "Backup loaded.";
+    } catch (e) { msg.textContent = "That doesn't look like a Growth Tracker backup. Check you copied all of it."; }
+  }
   document.getElementById("exportBtn").onclick = () => {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = "growth-tracker-backup-" + iso(new Date()) + ".json"; a.click();
-    msg.textContent = "Backup downloaded.";
+    const text = JSON.stringify(db); bt.value = text;
+    const fallback = () => { bt.focus(); bt.select(); msg.textContent = "Backup shown below. Select it all and copy it somewhere safe, like a note."; };
+    try { navigator.clipboard.writeText(text).then(() => { msg.textContent = "Backup copied. Paste it somewhere safe, like a note or email to yourself."; }, fallback); } catch (e) { fallback(); }
   };
-  document.getElementById("importFile").onchange = e => {
-    const f = e.target.files[0]; if (!f) return;
-    f.text().then(t => { const d = JSON.parse(t); if (!d.days) throw 0; db = d; db.reviews = db.reviews || {}; save(); renderToday(); pn.value = db.people || ""; msg.textContent = "Backup loaded."; })
-      .catch(() => { msg.textContent = "That file doesn't look like a Growth Tracker backup."; });
-  };
-  document.getElementById("wipeBtn").onclick = () => {
-    if (!confirm("Delete every entry in this browser? This can't be undone.")) return;
-    db = { days: {}, reviews: {}, people: "" }; save(); renderToday(); pn.value = ""; msg.textContent = "All entries deleted.";
-  };
+  document.getElementById("importBtn").onclick = () => restore(bt.value.trim());
+  document.getElementById("importFile").onchange = e => { const f = e.target.files[0]; if (f) f.text().then(restore); };
+  const wc = document.getElementById("wipeConfirm");
+  document.getElementById("wipeBtn").onclick = () => { wc.hidden = !wc.hidden; };
+  wc.onclick = () => { db = { days: {}, reviews: {}, people: "" }; save(); renderToday(); pn.value = ""; wc.hidden = true; msg.textContent = "All entries deleted."; };
 
   renderToday();
 })();
