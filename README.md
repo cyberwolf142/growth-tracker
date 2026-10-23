@@ -2,8 +2,11 @@
 
 A personal growth tracker and helper, built from a weekly plan of small habits and exercises (each under 30 minutes).
 
-- **Today:** today's exercise with steps, daily habit checkboxes, energy (spoons), mood, and notes
+- **Side panel:** jump between every section (slides in from a menu button on phones)
+- **Today:** today's exercise with steps, today's events and next project steps, daily habit checkboxes, energy (spoons), mood, and notes
 - **This week:** a habit grid, average mood, and gold-star count
+- **Calendar:** month view with events (one-off or repeating weekly, monthly, yearly), project due dates, and the days you did your habits
+- **Projects:** break a project into steps of 30 minutes or less, with a progress bar, next step, and optional due dates
 - **Hard moments:** a breathing coach (5-7-8, bee, box), 5-4-3-2-1 grounding, and quick tools
 - **Helping others:** ways to support someone who's struggling
 - **Sunday review:** weekly reflection questions, with past reviews saved

@@ -21,15 +21,79 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-header { padding-block: 20px 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 860px; margin: 0 auto; }
+header { padding-block: 20px 4px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 900px; margin: 0 auto; }
 header h1 { margin: 0; font-size: 1.5rem; }
 header p { margin: 4px 0 0; color: var(--muted); }
-nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); border-bottom: 1px solid var(--line); }
-nav .inner { max-width: 860px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-nav button { border: 0; background: none; color: var(--muted); padding: 8px 12px; border-radius: 999px;
-  font: inherit; cursor: pointer; white-space: nowrap; }
-nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-main { max-width: 860px; margin: 0 auto; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+/* side panel */
+aside#side { position: fixed; top: 0; bottom: 0; left: 0; width: 240px; z-index: 20; background: var(--card); border-right: 1px solid var(--line);
+  display: flex; flex-direction: column; padding: calc(16px + env(safe-area-inset-top, 0px)) 12px calc(16px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.brand { font-weight: 700; font-size: 1.1rem; padding: 4px 10px 12px; display: flex; align-items: center; gap: 8px; }
+.brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.navgroup { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 14px 10px 4px; }
+#tabs { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+#tabs button { border: 0; background: none; color: var(--text); padding: 9px 10px; border-radius: 10px; font: inherit; cursor: pointer;
+  text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#tabs button:hover { background: var(--bg); }
+#tabs button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.badge { font-size: .75rem; font-weight: 700; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--bg); color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge:empty { display: none; }
+#tabs .spacer { flex: 1; min-height: 16px; }
+#lockNow { color: var(--danger) !important; justify-content: flex-start !important; }
+.shell { margin-left: 240px; min-width: 0; }
+.topbar { display: none; }
+.backdrop { display: none; }
+@media (max-width: 899px) {
+  aside#side { transform: translateX(-100%); transition: transform .2s ease; box-shadow: none; width: min(280px, 85vw); }
+  body.menu-open aside#side { transform: none; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+  body.menu-open .backdrop { display: block; position: fixed; inset: 0; z-index: 15; background: rgba(0,0,0,.35); }
+  .shell { margin-left: 0; }
+  .topbar { display: flex; align-items: center; gap: 10px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg);
+    border-bottom: 1px solid var(--line); padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar strong { font-size: 1rem; }
+  header { padding-top: 14px; }
+}
+@media (prefers-reduced-motion: reduce) { aside#side { transition: none; } }
+.iconbtn { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 10px; width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; }
+/* projects */
+.progress { height: 8px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 8px 0; border: 1px solid var(--line); }
+.progress > span { display: block; height: 100%; background: var(--accent); }
+.step { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.step:first-child { border-top: 0; }
+.step .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.step.done .txt { text-decoration: line-through; color: var(--muted); }
+.chip { display: inline-block; font-size: .78rem; padding: 1px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); margin-left: 4px; white-space: nowrap; }
+.chip.due { color: var(--star); border-color: var(--star); }
+.chip.late { color: var(--danger); border-color: var(--danger); }
+.x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
+.x:hover { color: var(--danger); }
+.formrow { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; margin-top: 10px; align-items: center; }
+.formrow > * { min-width: 0; }
+select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+@media (max-width: 560px) { .formrow { grid-template-columns: 1fr 1fr; } .formrow > input[type=text] { grid-column: 1 / -1; } }
+.next { background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; margin-top: 8px; font-size: .95rem; }
+/* calendar */
+.calhead { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.calhead strong { flex: 1; font-size: 1.1rem; }
+.calgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.calgrid .dow { text-align: center; font-size: .75rem; font-weight: 700; color: var(--muted); padding: 4px 0; text-transform: uppercase; letter-spacing: .05em; }
+.calday { aspect-ratio: 1 / 1; max-width: 100%; border: 1px solid var(--line); background: var(--card); border-radius: 10px; color: var(--text); font: inherit;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px 2px; min-width: 0; }
+.calday.other { opacity: .4; }
+@media (min-width: 700px) { .calday { aspect-ratio: auto; height: 68px; } }
+.calday.today { border-color: var(--accent); border-width: 2px; font-weight: 700; }
+.calday.sel { background: var(--accent); color: var(--card); border-color: var(--accent); }
+.calday .num { font-size: .9rem; font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 3px; min-height: 7px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.dots i.ev { background: var(--accent); } .dots i.st { background: var(--star); } .dots i.hb { background: var(--muted); }
+.calday.sel .dots i { background: var(--card); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .82rem; color: var(--muted); margin-top: 10px; }
+.legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; background: var(--c); }
+.evt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.evt:first-child { border-top: 0; }
+.evt .time { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; min-width: 52px; }
+.evt .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+main { max-width: 900px; margin: 0 auto; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 section { display: none; } section.active { display: block; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
 .card h2 { margin: 0 0 4px; font-size: 1.15rem; } .card h3 { margin: 0 0 6px; font-size: 1rem; }
@@ -70,7 +134,7 @@ button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px
 .circle { } @media (prefers-reduced-motion: reduce) { .circle { transition: none; } }
 .lock { display: none; min-height: 100vh; align-items: center; justify-content: center; padding-block: 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 body:not(.unlocked) .lock { display: flex; }
-body:not(.unlocked) > header, body:not(.unlocked) > nav, body:not(.unlocked) > main, body:not(.unlocked) > footer { display: none; }
+body:not(.unlocked) > aside, body:not(.unlocked) > .shell, body:not(.unlocked) > .backdrop { display: none !important; }
 .lock .card { width: 100%; max-width: 380px; }
 .lock h1 { margin: 0 0 4px; font-size: 1.4rem; }
 .lock input[type=password] { margin-top: 10px; }
@@ -79,7 +143,7 @@ body:not(.unlocked) > header, body:not(.unlocked) > nav, body:not(.unlocked) > m
 .linkbtn { background: none; border: 0; color: var(--muted); text-decoration: underline; font: inherit; font-size: .88rem; cursor: pointer; padding: 0; margin-top: 14px; }
 input[type=password] { width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
 #lockNow { margin-left: auto; }
-footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); color: var(--muted); font-size: .85rem; }
+footer { max-width: 900px; margin: 0 auto; padding-block: 8px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); color: var(--muted); font-size: .85rem; }
 </style>
 </head>
 <body>
@@ -105,20 +169,32 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   </form>
 </div>
 
+<aside id="side" aria-label="Sections">
+  <div class="brand"><span class="dot"></span>Growth Tracker</div>
+  <nav id="tabs">
+    <div class="navgroup">Daily</div>
+    <button data-tab="today" class="active">Today</button>
+    <button data-tab="week">This week</button>
+    <button data-tab="calendar">Calendar <span class="badge" id="badgeCal"></span></button>
+    <div class="navgroup">Build</div>
+    <button data-tab="projects">Projects <span class="badge" id="badgeProj"></span></button>
+    <div class="navgroup">Support</div>
+    <button data-tab="toolkit">Hard moments</button>
+    <button data-tab="others">Helping others</button>
+    <div class="navgroup">Reflect</div>
+    <button data-tab="review">Sunday review</button>
+    <div class="spacer"></div>
+    <button data-tab="data">Backup &amp; security</button>
+    <button id="lockNow" title="Lock now">Lock</button>
+  </nav>
+</aside>
+<div class="backdrop" id="backdrop"></div>
+<div class="shell">
+<div class="topbar"><button class="iconbtn" id="menuBtn" aria-label="Open menu">&#9776;</button><strong id="topTitle">Today</strong></div>
 <header>
-  <h1>Growth Tracker</h1>
-  <p>Small daily habits, one exercise a day, and tools for hard moments. Everything you type is encrypted with your passcode and stays in this browser.</p>
+  <h1 id="pageTitle">Today</h1>
+  <p id="pageSub">Small daily habits, one exercise a day, and tools for hard moments. Everything you type is encrypted with your passcode and stays in this browser.</p>
 </header>
-<nav><div class="inner" id="tabs">
-  <button data-tab="today" class="active">Today</button>
-  <button data-tab="week">This week</button>
-  <button data-tab="toolkit">Hard moments</button>
-  <button data-tab="others">Helping others</button>
-  <button data-tab="review">Sunday review</button>
-  <button data-tab="data">Backup &amp; security</button>
-  <button id="lockNow" title="Lock now">Lock</button>
-</div></nav>
-
 <main>
 <!-- TODAY -->
 <section id="today" class="active">
@@ -129,6 +205,12 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   </div>
 
   <div class="card focus" id="focusCard"></div>
+
+  <div class="card">
+    <h2>On your plate</h2>
+    <p class="muted">Events on your calendar and the next step of each project.</p>
+    <div id="todayPlan"></div>
+  </div>
 
   <div class="card">
     <h2>Daily anchors</h2>
@@ -187,6 +269,54 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
     <h2>The weekly plan</h2>
     <div class="tablewrap"><table id="planTable"></table></div>
   </div>
+</section>
+
+<!-- CALENDAR -->
+<section id="calendar">
+  <div class="card">
+    <div class="calhead">
+      <button class="pill" id="calPrev" aria-label="Previous month">&larr;</button>
+      <strong id="calLabel"></strong>
+      <button class="pill" id="calToday">Today</button>
+      <button class="pill" id="calNext" aria-label="Next month">&rarr;</button>
+    </div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="legend"><span style="--c:var(--accent)">Event</span><span style="--c:var(--star)">Project step due</span><span style="--c:var(--muted)">Habits done</span></div>
+  </div>
+  <div class="card">
+    <h2 id="selLabel"></h2>
+    <div id="selList"></div>
+    <h3 style="margin-top:14px">Add an event</h3>
+    <form id="evForm" autocomplete="off">
+      <label for="evTitle" class="muted">What</label>
+      <input type="text" id="evTitle" placeholder="Doctor appointment, coffee with Sam, gym" required>
+      <div class="formrow" style="grid-template-columns: 1fr 1fr 1fr">
+        <div><label for="evDate" class="muted">Date</label><input type="date" id="evDate" required></div>
+        <div><label for="evTime" class="muted">Time (optional)</label><input type="text" id="evTime" placeholder="14:30" inputmode="numeric" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"></div>
+        <div><label for="evRepeat" class="muted">Repeats</label><select id="evRepeat" style="width:100%"><option value="">Never</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></div>
+      </div>
+      <label for="evNotes" class="muted" style="display:block;margin-top:8px">Notes (optional)</label>
+      <input type="text" id="evNotes">
+      <div class="row" style="margin-top:10px"><button class="btn" type="submit">Add event</button><span class="muted" id="evMsg"></span></div>
+    </form>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="card">
+    <h2>Start a project</h2>
+    <p class="muted">Anything you want to build or finish. Break it into steps of 30 minutes or less, so each one fits into a day.</p>
+    <form id="projForm" autocomplete="off">
+      <label for="projName" class="muted">Project name</label>
+      <input type="text" id="projName" placeholder="Learn to cook 5 meals, fix up my bike, build a website" required>
+      <label for="projWhy" class="muted" style="display:block;margin-top:8px">Why it matters to you (optional)</label>
+      <input type="text" id="projWhy" placeholder="I want to feel more independent">
+      <div class="row" style="margin-top:10px"><button class="btn" type="submit">Add project</button></div>
+    </form>
+  </div>
+  <div id="projList"></div>
+  <details class="card tool" id="doneWrap" hidden><summary>Finished projects <span class="muted" id="doneCount"></span></summary><div id="doneList" style="margin-top:10px"></div></details>
 </section>
 
 <!-- TOOLKIT -->
@@ -300,6 +430,7 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
 </main>
 
 <footer>Built from the books in your "books" folder, mostly Dr. Faith G. Harper's <em>Unfuck Your…</em> series. Self-help, not a replacement for care.</footer>
+</div>
 
 <script>
 (function () {
@@ -374,7 +505,7 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
 
   // ---------- storage ----------
   const ENC_KEY = "growth-tracker-enc-v1";
-  const empty = () => ({ days: {}, reviews: {}, people: "" });
+  const empty = () => ({ days: {}, reviews: {}, people: "", events: [], projects: [] });
   let db = empty(), key = null, salt = null, saveTimer = null;
 
   const te = new TextEncoder(), td = new TextDecoder();
@@ -416,14 +547,194 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   const day = k => (db.days[k] = db.days[k] || { checks: {}, mood: null, spoons: null });
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  // ---------- tabs ----------
+  // ---------- side panel ----------
+  const TITLES = { today: ["Today", "Small daily habits, one exercise a day, and tools for hard moments. Everything you type is encrypted with your passcode and stays in this browser."],
+    week: ["This week", "Your habits, mood and gold stars for the week."],
+    calendar: ["Calendar", "Your events, project deadlines and habit days in one place."],
+    projects: ["Projects", "Build things one small step at a time."],
+    toolkit: ["Hard moments", "Quick tools for panic, anger, low mood and self-criticism."],
+    others: ["Helping others", "Small ways to support people around you."],
+    review: ["Sunday review", "Ten minutes to look back and plan ahead."],
+    data: ["Backup & security", "Your passcode, encrypted backups, and starting over."] };
+  let activeTab = "today";
+  function showTab(t) {
+    activeTab = t;
+    document.querySelectorAll("#tabs button[data-tab]").forEach(x => x.classList.toggle("active", x.dataset.tab === t));
+    document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === t));
+    document.getElementById("pageTitle").textContent = TITLES[t][0];
+    document.getElementById("topTitle").textContent = TITLES[t][0];
+    document.getElementById("pageSub").textContent = TITLES[t][1];
+    if (t === "today") renderToday();
+    if (t === "week") renderWeek();
+    if (t === "review") renderReview();
+    if (t === "calendar") renderCalendar();
+    if (t === "projects") renderProjects();
+    document.body.classList.remove("menu-open");
+    window.scrollTo(0, 0);
+  }
   document.getElementById("tabs").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b || !b.dataset.tab) return;
-    document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("active", x === b));
-    document.querySelectorAll("main section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
-    if (b.dataset.tab === "week") renderWeek();
-    if (b.dataset.tab === "review") renderReview();
-    window.scrollTo(0, 0);
+    showTab(b.dataset.tab);
+  });
+  document.getElementById("menuBtn").onclick = () => document.body.classList.add("menu-open");
+  document.getElementById("backdrop").onclick = () => document.body.classList.remove("menu-open");
+  document.addEventListener("keydown", e => { if (e.key === "Escape") document.body.classList.remove("menu-open"); });
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const parseISO = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+  function occurs(ev, k) {
+    if (ev.date === k) return true;
+    if (!ev.repeat || k < ev.date) return false;
+    const a = parseISO(ev.date), b = parseISO(k);
+    if (ev.repeat === "weekly") return Math.round((b - a) / 86400000) % 7 === 0;
+    if (ev.repeat === "monthly") return a.getDate() === b.getDate();
+    if (ev.repeat === "yearly") return a.getDate() === b.getDate() && a.getMonth() === b.getMonth();
+    return false;
+  }
+  const eventsOn = k => (db.events || []).filter(ev => occurs(ev, k)).sort((x, y) => (x.time || "99").localeCompare(y.time || "99"));
+  const stepsDue = k => { const out = []; (db.projects || []).forEach(p => { if (p.done) return; p.steps.forEach(st => { if (st.due === k && !st.done) out.push({ p, st }); }); }); return out; };
+  function updateBadges() {
+    const k = iso(new Date());
+    const n = db.events ? eventsOn(k).length : 0;
+    document.getElementById("badgeCal").textContent = n ? n : "";
+    let open = 0; (db.projects || []).forEach(p => { if (!p.done) open++; });
+    document.getElementById("badgeProj").textContent = open ? open : "";
+  }
+
+  // ---------- calendar ----------
+  let calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0);
+  let selDay = iso(new Date());
+  function renderCalendar() {
+    document.getElementById("calLabel").textContent = fmt(calMonth, { month: "long", year: "numeric" });
+    const start = mondayOf(calMonth), todayK = iso(new Date());
+    let html = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => '<div class="dow">' + d + "</div>").join("");
+    for (let i = 0; i < 42; i++) {
+      const d = addDays(start, i), k = iso(d);
+      if (i === 35 && d.getMonth() !== calMonth.getMonth()) break;
+      const x = db.days[k], hb = x && x.checks && Object.values(x.checks).some(Boolean);
+      const dots = (eventsOn(k).length ? '<i class="ev"></i>' : "") + (stepsDue(k).length ? '<i class="st"></i>' : "") + (hb ? '<i class="hb"></i>' : "");
+      const cls = ["calday", d.getMonth() !== calMonth.getMonth() ? "other" : "", k === todayK ? "today" : "", k === selDay ? "sel" : ""].join(" ");
+      html += '<button class="' + cls + '" data-day="' + k + '" aria-label="' + fmt(d, { weekday: "long", month: "long", day: "numeric" }) + '"><span class="num">' + d.getDate() + '</span><span class="dots">' + dots + "</span></button>";
+    }
+    document.getElementById("calGrid").innerHTML = html;
+    renderSelDay();
+  }
+  function renderSelDay() {
+    const d = parseISO(selDay);
+    document.getElementById("selLabel").textContent = fmt(d, { weekday: "long", month: "long", day: "numeric" });
+    document.getElementById("evDate").value = selDay;
+    const evs = eventsOn(selDay), sts = stepsDue(selDay);
+    let html = evs.map(ev => '<div class="evt"><span class="time">' + esc(ev.time || "All day") + '</span><span class="txt"><strong>' + esc(ev.title) + "</strong>" +
+      (ev.repeat ? '<span class="chip">' + esc(ev.repeat) + "</span>" : "") + (ev.notes ? '<br><span class="muted">' + esc(ev.notes) + "</span>" : "") +
+      '</span><button class="x" data-delev="' + ev.id + '" aria-label="Delete event">&times;</button></div>').join("");
+    html += sts.map(({ p, st }) => '<div class="evt"><span class="time" style="color:var(--star)">Due</span><span class="txt">' + esc(st.text) + '<br><span class="muted">' + esc(p.name) + "</span></span></div>").join("");
+    const x = db.days[selDay];
+    if (x && x.mood != null) html += '<div class="evt"><span class="time" style="color:var(--muted)">Mood</span><span class="txt">' + x.mood + " / 10" + (x.starNote ? ' &middot; <span class="stars"><span>&#9733;</span></span> ' + esc(x.starNote) : "") + "</span></div>";
+    document.getElementById("selList").innerHTML = html || '<p class="muted">Nothing planned. Add an event below.</p>';
+  }
+  document.getElementById("calGrid").addEventListener("click", e => { const b = e.target.closest("[data-day]"); if (!b) return; selDay = b.dataset.day; renderCalendar(); });
+  document.getElementById("selList").addEventListener("click", e => {
+    const b = e.target.closest("[data-delev]"); if (!b) return;
+    db.events = db.events.filter(ev => ev.id !== b.dataset.delev); save(); renderCalendar(); updateBadges();
+  });
+  document.getElementById("calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+  document.getElementById("calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
+  document.getElementById("calToday").onclick = () => { calMonth = new Date(); calMonth.setDate(1); calMonth.setHours(0, 0, 0, 0); selDay = iso(new Date()); renderCalendar(); };
+  document.getElementById("evForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const t = document.getElementById("evTitle"), dt = document.getElementById("evDate"), tm = document.getElementById("evTime");
+    if (!t.value.trim() || !dt.value) return;
+    let time = tm.value.trim();
+    if (time && !/^([01]?\d|2[0-3]):[0-5]\d$/.test(time)) { document.getElementById("evMsg").textContent = "Use a time like 09:00 or 14:30."; return; }
+    if (time.length === 4) time = "0" + time;
+    db.events = db.events || [];
+    db.events.push({ id: uid(), title: t.value.trim(), date: dt.value, time, repeat: document.getElementById("evRepeat").value, notes: document.getElementById("evNotes").value.trim() });
+    save(); selDay = dt.value; const sd = parseISO(selDay); calMonth = new Date(sd.getFullYear(), sd.getMonth(), 1);
+    t.value = ""; tm.value = ""; document.getElementById("evNotes").value = ""; document.getElementById("evRepeat").value = "";
+    document.getElementById("evMsg").textContent = "Event added.";
+    renderCalendar(); updateBadges();
+  });
+
+  // ---------- projects ----------
+  function stepHTML(p, st) {
+    const todayK = iso(new Date());
+    const due = st.due ? '<span class="chip ' + (!st.done && st.due < todayK ? "late" : "due") + '">' + fmt(parseISO(st.due), { month: "short", day: "numeric" }) + "</span>" : "";
+    return '<div class="step' + (st.done ? " done" : "") + '"><input type="checkbox" data-step="' + p.id + ":" + st.id + '"' + (st.done ? " checked" : "") + ' aria-label="Done"><span class="txt">' + esc(st.text) +
+      (st.mins ? '<span class="chip">' + st.mins + " min</span>" : "") + due + '</span><button class="x" data-delstep="' + p.id + ":" + st.id + '" aria-label="Delete step">&times;</button></div>';
+  }
+  function projectCard(p) {
+    const total = p.steps.length, done = p.steps.filter(s => s.done).length, pct = total ? Math.round(done / total * 100) : 0;
+    const next = p.steps.find(s => !s.done);
+    return '<div class="card" data-proj="' + p.id + '"><div class="row" style="justify-content:space-between;align-items:flex-start"><div style="min-width:0;flex:1"><h2 style="overflow-wrap:anywhere">' + esc(p.name) + "</h2>" +
+      (p.why ? '<div class="muted">' + esc(p.why) + "</div>" : "") + '</div><span class="muted" style="font-variant-numeric:tabular-nums">' + done + " / " + total + " steps</span></div>" +
+      '<div class="progress" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></div>' +
+      (p.done ? "" : next ? '<div class="next"><strong>Next step:</strong> ' + esc(next.text) + "</div>" : total ? '<div class="next"><strong>All steps done.</strong> Mark it finished, or add more.</div>' : '<div class="next">Add your first small step below.</div>') +
+      '<div style="margin-top:8px">' + p.steps.map(st => stepHTML(p, st)).join("") + "</div>" +
+      (p.done ? "" : '<form class="formrow" data-addstep="' + p.id + '" autocomplete="off"><input type="text" placeholder="Add a step (under 30 min)" aria-label="New step" required>' +
+        '<select aria-label="Minutes"><option value="">Time</option><option>5</option><option>10</option><option>15</option><option>20</option><option>25</option><option>30</option></select>' +
+        '<input type="date" aria-label="Due date (optional)"><button class="btn" type="submit">Add</button></form>') +
+      '<div class="row" style="margin-top:12px">' + (p.done ? '<button class="btn ghost" data-reopen="' + p.id + '">Reopen</button>' : '<button class="btn ghost" data-finish="' + p.id + '">Mark finished</button>') +
+      '<button class="btn ghost" data-delproj="' + p.id + '" style="color:var(--danger);border-color:var(--danger)">Delete</button>' +
+      '<button class="btn" data-delprojyes="' + p.id + '" style="background:var(--danger)" hidden>Yes, delete project</button></div></div>';
+  }
+  function renderProjects() {
+    const ps = db.projects || [];
+    const open = ps.filter(p => !p.done), fin = ps.filter(p => p.done);
+    document.getElementById("projList").innerHTML = open.length ? open.map(projectCard).join("") : '<div class="card"><p class="muted">No projects yet. Start one above. Small and specific works best, like "Cook 5 new meals" or "Clean out the garage".</p></div>';
+    document.getElementById("doneWrap").hidden = !fin.length;
+    document.getElementById("doneCount").textContent = "(" + fin.length + ")";
+    document.getElementById("doneList").innerHTML = fin.map(projectCard).join("");
+    updateBadges();
+  }
+  const findStep = ref => { const [pid, sid] = ref.split(":"); const p = db.projects.find(x => x.id === pid); return { p, st: p && p.steps.find(s => s.id === sid) }; };
+  document.getElementById("projForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const n = document.getElementById("projName"), w = document.getElementById("projWhy");
+    if (!n.value.trim()) return;
+    db.projects = db.projects || [];
+    db.projects.unshift({ id: uid(), name: n.value.trim(), why: w.value.trim(), created: iso(new Date()), done: false, steps: [] });
+    n.value = w.value = ""; save(); renderProjects();
+    const first = document.querySelector("#projList [data-addstep] input[type=text]"); if (first) first.focus();
+  });
+  const projSection = document.getElementById("projects");
+  projSection.addEventListener("submit", e => {
+    const f = e.target.closest("[data-addstep]"); if (!f) return; e.preventDefault();
+    const [txt, mins, due] = f.querySelectorAll("input[type=text], select, input[type=date]");
+    if (!txt.value.trim()) return;
+    const p = db.projects.find(x => x.id === f.dataset.addstep);
+    p.steps.push({ id: uid(), text: txt.value.trim(), mins: mins.value ? +mins.value : null, due: due.value || null, done: false });
+    save(); renderProjects();
+    const again = document.querySelector('[data-addstep="' + p.id + '"] input[type=text]'); if (again) again.focus();
+  });
+  projSection.addEventListener("change", e => {
+    const c = e.target.closest("[data-step]"); if (!c) return;
+    const { st } = findStep(c.dataset.step); st.done = c.checked; st.doneOn = c.checked ? iso(new Date()) : null; save(); renderProjects();
+  });
+  projSection.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.delstep) { const { p, st } = findStep(b.dataset.delstep); p.steps = p.steps.filter(s => s !== st); save(); renderProjects(); }
+    else if (b.dataset.finish) { db.projects.find(x => x.id === b.dataset.finish).done = true; save(); renderProjects(); }
+    else if (b.dataset.reopen) { db.projects.find(x => x.id === b.dataset.reopen).done = false; save(); renderProjects(); }
+    else if (b.dataset.delproj) { const y = b.parentNode.querySelector("[data-delprojyes]"); y.hidden = !y.hidden; }
+    else if (b.dataset.delprojyes) { db.projects = db.projects.filter(x => x.id !== b.dataset.delprojyes); save(); renderProjects(); }
+  });
+
+  // ---------- today's plan ----------
+  function renderTodayPlan() {
+    const k = iso(current);
+    const evs = eventsOn(k);
+    let html = evs.map(ev => '<div class="evt"><span class="time">' + esc(ev.time || "All day") + '</span><span class="txt">' + esc(ev.title) + "</span></div>").join("");
+    (db.projects || []).filter(p => !p.done).forEach(p => {
+      const st = p.steps.find(s => !s.done); if (!st) return;
+      html += '<div class="step"><input type="checkbox" data-tstep="' + p.id + ":" + st.id + '" aria-label="Done"><span class="txt">' + esc(st.text) + (st.mins ? '<span class="chip">' + st.mins + " min</span>" : "") +
+        '<br><span class="muted">' + esc(p.name) + "</span></span></div>";
+    });
+    document.getElementById("todayPlan").innerHTML = html || '<p class="muted">Nothing on the calendar and no project steps waiting. Add some from Calendar or Projects in the side panel.</p>';
+  }
+  document.getElementById("todayPlan").addEventListener("change", e => {
+    const c = e.target.closest("[data-tstep]"); if (!c || !c.checked) return;
+    const { st } = findStep(c.dataset.tstep); st.done = true; st.doneOn = iso(new Date()); save();
+    setTimeout(renderTodayPlan, 350);
   });
 
   // ---------- today ----------
@@ -443,6 +754,7 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
     document.getElementById("checkinNote").value = d.checkin || "";
     document.getElementById("starNote").value = d.starNote || "";
     document.getElementById("exerciseNote").value = d.exNote || "";
+    renderTodayPlan(); updateBadges();
   }
   document.getElementById("anchorList").addEventListener("change", e => {
     const id = e.target.dataset.anchor; if (!id) return;
@@ -564,10 +876,10 @@ footer { max-width: 860px; margin: 0 auto; padding-block: 8px 40px; padding-left
   const msg = document.getElementById("dataMsg");
   const bt = document.getElementById("backupText");
   function renderAll() {
-    renderToday(); pn.value = db.people || "";
-    const active = document.querySelector("#tabs button.active");
-    if (active && active.dataset.tab === "week") renderWeek();
-    if (active && active.dataset.tab === "review") renderReview();
+    db.events = db.events || []; db.projects = db.projects || [];
+    pn.value = db.people || "";
+    showTab(activeTab);
+    updateBadges();
   }
   document.getElementById("exportBtn").onclick = async () => {
     await persist();
